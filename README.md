@@ -21,7 +21,9 @@ cache.flush(); // clears all pending-writes in the cache and writes to backing-s
 ```
 
 # Benchmarks:
-Lowest latency performance with char key, char value: <b>27 nanoseconds</b>
+Lowest cache-miss latency performance with char key, char value: <b>27 nanoseconds</b>
+
+Lowest cache-hit latency performance with char key, char value: <b>16 nanoseconds</b>
 
 Highest cache-miss bandwidth performance with 100-character std::string key, 100-character std::string value: <b>1.9 GB/s (~21% peak bw)</b>
 
