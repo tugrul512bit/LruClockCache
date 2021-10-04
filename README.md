@@ -50,16 +50,16 @@ Cache size = 1024x5 pixels (1024x1024 pixels)
 
 Repeats: 10 (10)
 
-Key: pixel's x y values stringified and joined together (same)
+Key: 32-bit integer (same)
 
 Value: 32-bit integer (same)
 
-Total time: 22.5 seconds (13.7 seconds)
+Total time: 10.4 seconds (3.6 seconds)
 
-Cache time: 21.6 seconds (13.6 seconds)
+Cache time: 9.6 seconds (3.2 seconds)
 
-Throughput = <b>2.9 million pixel get/set operations per second (4.6 million pixels per second ✅ )</b>
+Throughput = <b>6.5 million pixel get/set operations per second (19.6 million pixels per second ✅ )</b>
 
 Cache-hit-ratio (read): <b>78% (100%)</b>
 
-The 4.6 million pixels per second value includes all of the work: key-string generation for each pixel, double-precision division after pixel summations and chrono time measurement latency.
+Timings include all of the computation work: double-precision division after pixel summations and chrono time measurement latency.
