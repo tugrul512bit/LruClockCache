@@ -15,8 +15,12 @@ LruClockCache<MyKeyType,MyValueType> cache(1024*5,[&](MyKeyType key){
   writeChunkToHDD(key,value);
 });
 
+// cache handles all cace-miss functions automatically
 MyValueType val = cache.get("a key");
+
+// cache handles all cace-miss functions automatically
 cache.set("another key",val);
+
 cache.flush(); // clears all pending-writes in the cache and writes to backing-store
 ```
 
