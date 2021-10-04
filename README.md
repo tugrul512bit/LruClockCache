@@ -19,3 +19,8 @@ MyValueType val = cache.get("a key");
 cache.set("another key",val);
 cache.flush(); // clears all pending-writes in the cache and writes to backing-store
 ```
+
+# Benchmarks:
+Lowest latency-performance with char key, char value: <b>27 nanoseconds</b>
+
+Test system: FX8150 CPU @ 3.6GHz, 1-channel DDR3 RAM @ 1600 MHz, Ubuntu 18.04 LTS 64-bit
