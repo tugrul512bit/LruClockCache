@@ -16,10 +16,10 @@ LruClockCache<MyKeyType,MyValueType> cache(1024*5,[&](MyKeyType key){
 });
 
 // cache handles all cace-miss functions automatically
-MyValueType val = cache.get("a key");
+MinecraftChunk chunk = cache.get("world coordinates 1500 35 2000");
 
 // cache handles all cace-miss functions automatically
-cache.set("another key",val);
+cache.set("world coordinates 1502 35 1999",chunk);
 
 cache.flush(); // clears all pending-writes in the cache and writes to backing-store
 ```
