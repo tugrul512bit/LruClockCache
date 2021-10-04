@@ -34,11 +34,11 @@ Highest cache-miss bandwidth performance with very long std::string key, very lo
 
 Highest cache-hit bandwidth performance with very long std::string key, very long std::string value: <b>4.9 GB/s (~55% peak bw)</b>
 
-# Test system: FX8150 CPU @ 3.6GHz (CPU from 2011), 1-channel DDR3 RAM @ 1600 MHz (9GB/s peak bw and 150ns latency), Ubuntu 18.04 LTS 64-bit
+<b>Test system: FX8150 CPU @ 3.6GHz (CPU from 2011), 1-channel DDR3 RAM @ 1600 MHz (9GB/s peak bw and 150ns latency), Ubuntu 18.04 LTS 64-bit</b>
 
-# Test method for cache-miss: single-threaded simple loop doing get&set using 100k different keys & values with only 300 cache items
+<b>Test method for cache-miss: single-threaded simple loop doing get&set using 100k different keys & values with only 300 cache items</b>
 
-# Test method for cache-hit: single-threaded simple loop doing get&set using 10 keys & 15 cache items
+<b>Test method for cache-hit: single-threaded simple loop doing get&set using 10 keys & 15 cache items</b>
 
 -----
 
