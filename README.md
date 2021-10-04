@@ -54,12 +54,12 @@ Key: 32-bit integer (same)
 
 Value: 32-bit integer (same)
 
-Total time: 10.4 seconds (3.6 seconds)
+Total time: 10.4 seconds (2.6 seconds)
 
-Cache time: 9.6 seconds (3.2 seconds)
+Cache time: 9.6 seconds (2.2 seconds)
 
-Throughput = <b>6.5 million pixel get/set operations per second (19.6 million pixels per second)</b>
+Throughput = <b>6.5 million pixel get/set operations per second (28 million pixels per second)</b>
 
 Cache-hit-ratio (read): <b>78% (100%)</b>
 
-Timings include all of the computation work: double-precision division after pixel summations and chrono time measurement latency.
+Timings (28 million pixel lookups per second = 35 nanosecond per access) include all of the computation work: double-precision division after pixel summations and chrono time measurement latency.
