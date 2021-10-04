@@ -1,5 +1,5 @@
 # LruClockCache
-A low-latency LRU approximation cache in C++ using CLOCK second-chance algorithm.
+Low-latency LRU approximation cache in C++ using CLOCK second-chance algorithm.
 ```CPP
 using MyKeyType = std::string;
 using MyValueType = MinecraftChunk;
