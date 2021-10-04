@@ -60,6 +60,20 @@ public:
 		return accessClock2Hand(key,nullptr);
 	}
 
+	inline
+	const std::vector<LruValue> getMultiple(const std::vector<LruKey> & key)  noexcept
+	{
+		const int n = key.size();
+		std::vector<LruValue> result(n);
+
+		for(int i=0;i<n;i++)
+		{
+			result[i]=accessClock2Hand(key[i],nullptr);
+		}
+		return result;
+	}
+
+
 	// thread-safe but slower version of get()
 	inline
 	const LruValue getThreadSafe(const LruKey & key)  noexcept
@@ -177,7 +191,7 @@ public:
 					valueBuffer[ctrFound]=loadedData;
 					chanceToSurviveBuffer[ctrFound]=0;
 
-					mapping[key]=ctrFound;
+					mapping.insert(std::make_pair(key,ctrFound));
 					keyBuffer[ctrFound]=key;
 
 					return loadedData;
@@ -191,7 +205,7 @@ public:
 					chanceToSurviveBuffer[ctrFound]=0;
 
 
-					mapping[key]=ctrFound;
+					mapping.insert(std::make_pair(key,ctrFound));
 					keyBuffer[ctrFound]=key;
 					return *value;
 				}
@@ -212,7 +226,7 @@ public:
 					valueBuffer[ctrFound]=loadedData;
 					chanceToSurviveBuffer[ctrFound]=0;
 
-					mapping[key]=ctrFound;
+					mapping.insert(std::make_pair(key,ctrFound));
 					keyBuffer[ctrFound]=key;
 
 					return loadedData;
@@ -226,7 +240,7 @@ public:
 					chanceToSurviveBuffer[ctrFound]=0;
 
 
-					mapping[key]=ctrFound;
+					mapping.insert(std::make_pair(key,ctrFound));
 					keyBuffer[ctrFound]=key;
 					return *value;
 				}
