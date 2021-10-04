@@ -61,3 +61,5 @@ Cache time: 21.6 seconds (13.6 seconds)
 Throughput = <b>2.9 million pixel get/set operations per second (4.6 million pixels per second ✅ )</b>
 
 Cache-hit-ratio (read): <b>78% (100%)</b>
+
+The 4.6 million pixels per second value includes all of the work: key-string generation for each pixel, double-precision division after pixel summations and chrono time measurement latency.
