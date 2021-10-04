@@ -12,7 +12,8 @@
 #include<algorithm>
 #include<unordered_map>
 #include<functional>
-
+#include<mutex>
+#include<unordered_map>
 /* LRU-CLOCK-second-chance implementation */
 template<	typename LruKey, typename LruValue>
 class LruClockCache
