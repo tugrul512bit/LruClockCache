@@ -21,6 +21,14 @@ cache.flush(); // clears all pending-writes in the cache and writes to backing-s
 ```
 
 # Benchmarks:
-Lowest latency-performance with char key, char value: <b>27 nanoseconds</b>
+Lowest latency performance with char key, char value: <b>27 nanoseconds</b>
 
-Test system: FX8150 CPU @ 3.6GHz, 1-channel DDR3 RAM @ 1600 MHz, Ubuntu 18.04 LTS 64-bit
+Highest cache-miss bandwidth performance with 100-character std::string key, 100-character std::string value: <b>1.9 GB/s (~21% RAM bandwidth)</b>
+
+Highest cache-hit bandwidth performance with 100-character std::string key, 100-character std::string value: <b>4.9 GB/s (>55% of RAM bandwidth)</b>
+
+Test system: FX8150 CPU @ 3.6GHz (CPU from 2011), 1-channel DDR3 RAM @ 1600 MHz (9GB/s peak bw and 150ns latency), Ubuntu 18.04 LTS 64-bit
+
+Test method for cache-miss: single-threaded simple loop doing get&set using 100k different keys & values with only 300 cache items
+
+Test method for cache-hit: single-threaded simple loop doing get&set using 10 keys & 15 cache items
