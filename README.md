@@ -58,6 +58,6 @@ Total time: 22.5 seconds (13.7 seconds)
 
 Cache time: 21.6 seconds (13.6 seconds)
 
-Throughput = <b>2.9 million pixel get/set operations per second (✅ 4.6 million pixels per seconds )</b>
+Throughput = <b>2.9 million pixel get/set operations per second (4.6 million pixels per second ✅ )</b>
 
 Cache-hit-ratio (read): <b>78% (100%)</b>
