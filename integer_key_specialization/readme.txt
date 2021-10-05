@@ -10,13 +10,13 @@ Layout in the circular buffers (mapped by unordered_map)
 Cache-line width = 4
           cache line 0       cache line 1         cache line 2        cache line 3
 index     0  1  2  3         4  5   6   7        8  9   10   11       12   13  14   15
-          ^
-          
-             \
-              \
-             single unordered_map find
-                \
-                 \
-                  \
-user requests: key 0,1,6,10,12,13,14
+          ^  ^ 2x data              ^ 1x data         1x data              3x data
+           \/                      /
+            \                    /
+             \                 /
+            "1x find"       "1x find"
+                \          /   
+                 \__      /     
+                  \ \   /   
+user requests: key 0,1,6,10,12,13,14 = 4x unordered_map find operations, 7x data
 ```
