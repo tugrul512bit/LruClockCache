@@ -62,4 +62,4 @@ Throughput = <b>6.5 million pixel get/set operations per second (~50 million pix
 
 Cache-hit-ratio (read): <b>78% (100%)</b>
 
-Timings (28 million pixel lookups per second = 35 nanosecond per access) include all of the computation work: double-precision division after pixel summations and chrono time measurement latency.
+Timings (50 million pixel lookups per second = 20 nanosecond average per access) include all of the computation work: integer division after pixel summations and chrono time measurement latency.
