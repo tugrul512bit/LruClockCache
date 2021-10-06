@@ -26,6 +26,8 @@ cache.flush(); // clears all pending-writes in the cache and writes to backing-s
 
 # Benchmarks:
 
+Up to <b>50 million lookups per second</b> on an old CPU like FX8150 under heavy get/set usage.
+
 Lowest cache-miss latency performance with char key, char value: <b>27 nanoseconds</b>
 
 Lowest cache-hit latency performance with char key, char value: <b>16 nanoseconds</b>
