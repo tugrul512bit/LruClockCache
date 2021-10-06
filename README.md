@@ -46,19 +46,19 @@ Highest cache-hit bandwidth performance with very long std::string key, very lon
 
 Image size = 1024x1024 pixels
 
-Cache size = 1024x5 pixels (1024x1024 pixels)
+Cache size = 1024x5 pixels (1024x1024+1000 pixels)
 
-Repeats: 10 (10)
+Repeats: 10 (50)
 
 Key: 32-bit integer (same)
 
 Value: 32-bit integer (same)
 
-Total time: 10.4 seconds (2.6 seconds)
+Total time: 10.4 seconds (6.7 seconds)
 
-Cache time: 9.6 seconds (2.2 seconds)
+Cache time: 9.6 seconds (6.25 seconds)
 
-Throughput = <b>6.5 million pixel get/set operations per second (28 million pixels per second)</b>
+Throughput = <b>6.5 million pixel get/set operations per second (~50 million pixels per second)</b>
 
 Cache-hit-ratio (read): <b>78% (100%)</b>
 
