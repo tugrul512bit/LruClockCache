@@ -55,6 +55,7 @@ public:
 			isEditedBuffer.push_back(0);
 			keyBuffer.push_back(LruKey());
 		}
+		mapping.reserve(numElements);
 	}
 
 
