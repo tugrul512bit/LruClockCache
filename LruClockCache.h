@@ -14,13 +14,15 @@
 #include<functional>
 #include<mutex>
 #include<unordered_map>
+
+
 /* LRU-CLOCK-second-chance implementation
  *
  * LruKey: type of key (std::string, int, char, size_t, objects)
  * LruValue: type of value that is bound to key (same as above)
  * ClockHandInteger: just an optional optimization to reduce memory consumption when cache size is equal to or less than 255,65535,4B-1,...
  */
-template<	typename LruKey, typename LruValue, typename ClockHandInteger=size_t>
+template<	typename LruKey, typename LruValue,typename ClockHandInteger=size_t>
 class LruClockCache
 {
 public:
@@ -33,16 +35,17 @@ public:
 	// 				to let the cache automatically set data to backing-store
 	//				example: [&](MyClass key, MyAnotherClass value){ redis.set(key,value); }
 	//				takes a LruKey as key and LruValue as value
+
 	LruClockCache(ClockHandInteger numElements,
 				const std::function<LruValue(LruKey)> & readMiss,
-				const std::function<void(LruKey,LruValue)> & writeMiss):size(numElements)
+				const std::function<void(LruKey,LruValue)> & writeMiss):size(numElements),loadData(readMiss),saveData(writeMiss)
 	{
 		ctr = 0;
 		// 50% phase difference between eviction and second-chance hands of the "second-chance" CLOCK algorithm
 		ctrEvict = numElements/2;
 
-		loadData=readMiss;
-		saveData=writeMiss;
+		//loadData=readMiss;
+		//saveData=writeMiss;
 
 		// initialize circular buffers
 		for(ClockHandInteger i=0;i<numElements;i++)
@@ -201,12 +204,12 @@ public:
 				// "get"
 				if(opType==0)
 				{
-					LruValue loadedData = loadData(key);
+					const LruValue && loadedData = loadData(key);
 					mapping.erase(keyBuffer[ctrFound]);
 					valueBuffer[ctrFound]=loadedData;
 					chanceToSurviveBuffer[ctrFound]=0;
 
-					mapping.insert(std::make_pair(key,ctrFound));
+					mapping.emplace(key,ctrFound);
 					keyBuffer[ctrFound]=key;
 
 					return loadedData;
@@ -219,8 +222,7 @@ public:
 					valueBuffer[ctrFound]=*value;
 					chanceToSurviveBuffer[ctrFound]=0;
 
-
-					mapping.insert(std::make_pair(key,ctrFound));
+					mapping.emplace(key,ctrFound);
 					keyBuffer[ctrFound]=key;
 					return *value;
 				}
@@ -236,12 +238,12 @@ public:
 				// "get"
 				if(opType == 0)
 				{
-					LruValue loadedData = loadData(key);
+					const LruValue && loadedData = loadData(key);
 					mapping.erase(keyBuffer[ctrFound]);
 					valueBuffer[ctrFound]=loadedData;
 					chanceToSurviveBuffer[ctrFound]=0;
 
-					mapping.insert(std::make_pair(key,ctrFound));
+					mapping.emplace(key,ctrFound);
 					keyBuffer[ctrFound]=key;
 
 					return loadedData;
@@ -254,8 +256,7 @@ public:
 					valueBuffer[ctrFound]=*value;
 					chanceToSurviveBuffer[ctrFound]=0;
 
-
-					mapping.insert(std::make_pair(key,ctrFound));
+					mapping.emplace(key,ctrFound);
 					keyBuffer[ctrFound]=key;
 					return *value;
 				}
@@ -273,8 +274,8 @@ private:
 	std::vector<unsigned char> chanceToSurviveBuffer;
 	std::vector<unsigned char> isEditedBuffer;
 	std::vector<LruKey> keyBuffer;
-	std::function<LruValue(LruKey)> loadData;
-	std::function<void(LruKey,LruValue)> saveData;
+	const std::function<LruValue(LruKey)>  loadData;
+	const std::function<void(LruKey,LruValue)>  saveData;
 	ClockHandInteger ctr;
 	ClockHandInteger ctrEvict;
 };
