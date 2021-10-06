@@ -14,8 +14,13 @@
 #include<functional>
 #include<mutex>
 #include<unordered_map>
-/* LRU-CLOCK-second-chance implementation */
-template<	typename LruKey, typename LruValue>
+/* LRU-CLOCK-second-chance implementation
+ *
+ * LruKey: type of key (std::string, int, char, size_t, objects)
+ * LruValue: type of value that is bound to key (same as above)
+ * ClockHandInteger: just an optional optimization to reduce memory consumption when cache size is equal to or less than 255,65535,4B-1,...
+ */
+template<	typename LruKey, typename LruValue, typename ClockHandInteger=size_t>
 class LruClockCache
 {
 public:
@@ -28,7 +33,7 @@ public:
 	// 				to let the cache automatically set data to backing-store
 	//				example: [&](MyClass key, MyAnotherClass value){ redis.set(key,value); }
 	//				takes a LruKey as key and LruValue as value
-	LruClockCache(size_t numElements,
+	LruClockCache(ClockHandInteger numElements,
 				const std::function<LruValue(LruKey)> & readMiss,
 				const std::function<void(LruKey,LruValue)> & writeMiss):size(numElements)
 	{
@@ -40,7 +45,7 @@ public:
 		saveData=writeMiss;
 
 		// initialize circular buffers
-		for(size_t i=0;i<numElements;i++)
+		for(ClockHandInteger i=0;i<numElements;i++)
 		{
 			valueBuffer.push_back(LruValue());
 			chanceToSurviveBuffer.push_back(0);
@@ -62,6 +67,7 @@ public:
 		return accessClock2Hand(key,nullptr);
 	}
 
+	// only syntactic difference
 	inline
 	const std::vector<LruValue> getMultiple(const std::vector<LruKey> & key)  noexcept
 	{
@@ -106,6 +112,7 @@ public:
 		accessClock2Hand(key,&val,1);
 	}
 
+	// use this before closing the backing-store to store the latest bits of data
 	void flush()
 	{
 		for (auto mp = mapping.cbegin(); mp != mapping.cend() /* not hoisted */; /* no increment */)
@@ -131,7 +138,8 @@ public:
 	LruValue const accessClock2Hand(const LruKey & key,const LruValue * value, const bool opType = 0)
 	{
 
-		typename std::unordered_map<LruKey,size_t>::iterator it = mapping.find(key);
+		// check if it is a cache-hit (in-cache)
+		typename std::unordered_map<LruKey,ClockHandInteger>::iterator it = mapping.find(key);
 		if(it!=mapping.end())
 		{
 
@@ -143,24 +151,27 @@ public:
 			}
 			return valueBuffer[it->second];
 		}
-		else
+		else // could not found key in cache, so searching in circular-buffer starts
 		{
 			long long ctrFound = -1;
 			LruValue oldValue;
 			LruKey oldKey;
 			while(ctrFound==-1)
 			{
+				// eviction hand lowers the "chance" status down if its 1 but slot is saved from eviction
 				if(chanceToSurviveBuffer[ctr]>0)
 				{
 					chanceToSurviveBuffer[ctr]=0;
 				}
 
+				// circular buffer has no bounds
 				ctr++;
 				if(ctr>=size)
 				{
 					ctr=0;
 				}
 
+				// unlucky slot is selected for eviction
 				if(chanceToSurviveBuffer[ctrEvict]==0)
 				{
 					ctrFound=ctrEvict;
@@ -168,6 +179,7 @@ public:
 					oldKey = keyBuffer[ctrFound];
 				}
 
+				// circular buffer has no bounds
 				ctrEvict++;
 				if(ctrEvict>=size)
 				{
@@ -175,6 +187,7 @@ public:
 				}
 			}
 
+			// eviction algorithm start
 			if(isEditedBuffer[ctrFound] == 1)
 			{
 				// if it is "get"
@@ -253,17 +266,17 @@ public:
 
 
 private:
-	size_t size;
+	ClockHandInteger size;
 	std::mutex mut;
-	std::unordered_map<LruKey,size_t> mapping;
+	std::unordered_map<LruKey,ClockHandInteger> mapping;
 	std::vector<LruValue> valueBuffer;
 	std::vector<unsigned char> chanceToSurviveBuffer;
 	std::vector<unsigned char> isEditedBuffer;
 	std::vector<LruKey> keyBuffer;
 	std::function<LruValue(LruKey)> loadData;
 	std::function<void(LruKey,LruValue)> saveData;
-	size_t ctr;
-	size_t ctrEvict;
+	ClockHandInteger ctr;
+	ClockHandInteger ctrEvict;
 };
 
 
