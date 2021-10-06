@@ -1,4 +1,4 @@
-With integer keys, it is easier to multiplex multiple RAM accesses because we can predict if two or more accesses can be neighbors, hence local multiplexing is possible. 
+With integer keys, it is easier to do locally multiplex multiple RAM accesses because we can predict if two or more accesses can be neighbors. 
 
 But global multiplexing would require more advanced features of C++ such as nano-coroutines but this would solve the "integer keys only" problem.
 
