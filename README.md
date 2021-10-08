@@ -88,10 +88,10 @@ auto LLC = std::make_shared<LruClockCache<int,int>>(LLCsize,
 });
 
 // this is the multi-level cache that adds an L1 and an L2 infront of the LLC.
- size_t L1size=1024*32; // this needs to be (power of 2) sized cache because it is direct-mapped (with N-way tags) cache
- size_t L2size=1024*512; // this can be any size, it is LRU cache
- CacheThreader<LruClockCache,int,int> cache(LLC,L1size,L2size);
- cache.set(500,10); // if it is in L1 then returns directly in 1-2 nanoseconds
+size_t L1size=1024*32; // this needs to be (power of 2) sized cache because it is direct-mapped (with N-way tags) cache
+size_t L2size=1024*512; // this can be any size, it is LRU cache
+CacheThreader<LruClockCache,int,int> cache(LLC,L1size,L2size);
+cache.set(500,10); // if it is in L1 then returns directly in 1-2 nanoseconds
                     // if it is not in L1 then goes L2 and returns within ~50 nanoseconds if its an L2 hit
                     // if it is not L2 hit then it goes LLC in a thread-safe way and gets data much slower like 500 nanoseconds or more due to std::lock_guard
  
@@ -104,3 +104,34 @@ cache.get(500); // same as set method but returns a value
 # Benchmarks for Multi-Level Cache:
 
 Up to <b>400 million lookups per second</b> for FX8150 3.6GHz in single-threaded Gaussian Blur algorithm. This is equivalent to <b>2.5 nanoseconds</b> average access latency per pixel. For a new CPU like Ryzen, it should be as fast as a billion lookups per second.
+```
+LLC cache hit ratio (read)=1
+LLC cache hit ratio (write)=1
+image size=34x34 L1 tags = 65536 L2 tags=262144 LLC tags=1048576 performance: 175530469 nanoseconds     (bandwidth = 1009.24 MB/s)      (throughput = 3.96 nanoseconds per iteration) 
+Finished!
+LLC cache hit ratio (read)=1.00
+LLC cache hit ratio (write)=1.00
+image size=68x68 L1 tags = 65536 L2 tags=262144 LLC tags=1048576 performance: 198700826 nanoseconds     (bandwidth = 947.92 MB/s)      (throughput = 4.22 nanoseconds per iteration) 
+Finished!
+LLC cache hit ratio (read)=1.00
+LLC cache hit ratio (write)=1.00
+image size=136x136 L1 tags = 65536 L2 tags=262144 LLC tags=1048576 performance: 192917413 nanoseconds     (bandwidth = 1005.22 MB/s)      (throughput = 3.98 nanoseconds per iteration) 
+Finished!
+LLC cache hit ratio (read)=1.00
+LLC cache hit ratio (write)=1.00
+image size=272x272 L1 tags = 65536 L2 tags=262144 LLC tags=1048576 performance: 298379386 nanoseconds     (bandwidth = 654.78 MB/s)      (throughput = 6.11 nanoseconds per iteration) 
+Finished!
+LLC cache hit ratio (read)=1.00
+LLC cache hit ratio (write)=1.00
+image size=544x544 L1 tags = 65536 L2 tags=262144 LLC tags=1048576 performance: 3387914152 nanoseconds     (bandwidth = 55.49 MB/s)      (throughput = 72.08 nanoseconds per iteration) 
+Finished!
+LLC cache hit ratio (read)=0.93
+LLC cache hit ratio (write)=0.45
+image size=1088x1088 L1 tags = 65536 L2 tags=262144 LLC tags=1048576 performance: 4518605673 nanoseconds     (bandwidth = 41.76 MB/s)      (throughput = 95.78 nanoseconds per iteration) 
+Finished!
+LLC cache hit ratio (read)=0.89
+LLC cache hit ratio (write)=0.12
+image size=2176x2176 L1 tags = 65536 L2 tags=262144 LLC tags=1048576 performance: 5058006420 nanoseconds     (bandwidth = 37.38 MB/s)      (throughput = 107.02 nanoseconds per iteration) 
+Finished!
+
+```
