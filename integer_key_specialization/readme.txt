@@ -4,7 +4,7 @@ But global multiplexing would require more advanced features of C++ such as nano
 
 Example local multiplexing:
 
-Layout in the circular buffers (mapped by unordered_map)
+Layout in the buffers (mapped by unordered_map)
 
 ```
 Cache-line width = 4
@@ -25,5 +25,7 @@ multiplexing computation:
 cache-line selection = (key/width)
 cache-lane selection = key%width  (if width is integer power of 2 then it is optimized by compiler into bit-wise operations)
 So only 2 bit-wise operations per key could be pipelined with all other keys and should make no more than few nanoseconds latency per access while gaining multiple times the original bandwidth of singular key lookups.
+
+Currently, DirectMappedCache class contains an array of tags to singular items. This makes good enough multiplexing performance on the input. It just takes a single "&" operation to know the target tag. But since it is not an efficient method, CacheThreader class adds LRU behind the direct mapped cache and the LRU cache uses a LLC cache (just another LRU but with synchronized get/set methods) which is connected to the real datastore. This way, latency is as low as 2 nanoseconds on average (or there is multiplexing of RAM fetching which hides the latencies and achieves inverse-throughput of 2 nanoseconds).
 
 ```
