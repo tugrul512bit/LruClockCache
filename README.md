@@ -107,6 +107,9 @@ LLC.flush(); // write latest bits of data to the backing store
 # Benchmarks for Multi-Level Cache:
 
 Up to <b>400 million lookups per second</b> for FX8150 3.6GHz in single-threaded Gaussian Blur algorithm. This is equivalent to <b>2.5 nanoseconds</b> average access latency per pixel. For a new CPU like Ryzen, it should be as fast as a billion lookups per second.
+
+<b>~900 million get calls per second in read-only usage with multiple threads</b>: https://github.com/tugrul512bit/LruClockCache/wiki/How-To-Do-Multithreading-With-a-Read-Only-Multi-Level-Cache
+
 ```
 LLC cache hit ratio (read)=1
 LLC cache hit ratio (write)=1
