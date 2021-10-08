@@ -29,6 +29,8 @@ private:
 	int nThreads;
 	std::vector<std::shared_ptr<LruClockCache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>>> L2;
 	std::vector<std::shared_ptr<DirectMappedCache<CacheKey,CacheValue>>> L1;
+
+
 public:
 	CacheThreader(std::shared_ptr<Cache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>> cacheLLC, int sizeCacheL1, int sizeCacheL2, int nThread=1)
 	{
@@ -53,34 +55,36 @@ public:
 				this->L2[i]->set(key,value);
 			}));
 		}
+
 	}
 
 	// get data from closest cache
 	// currently only 1 thread supported
 	const CacheValue get(CacheKey key) const
 	{
-		static thread_local int idxThread=0;
-		return L1[idxThread]->get(key);
+		return L1[0]->get(key);
 	}
 
 	// set data to closest cache
 	// currently only 1 thread supported
 	void set(CacheKey key, CacheValue value) const
 	{
-		static thread_local int idxThread=0;
-		L1[idxThread]->set(key,value);
+		L1[0]->set(key,value);
 	}
 
-	// currently only 1 thread supported
+	// currently only 1 thread supported for read+write
+	// only read-only usage for multi-threaded apps
+	// must be called from all threads
+	// does not flush LLC
+	// LLC needs to be flushed manually by main-thread
 	void flush()
 	{
-		static thread_local int idxThread=0;
-		L1[idxThread]->flush();
-		L2[idxThread]->flush();
-		LLC->flush();
+		L1[0]->flush();
+		L2[0]->flush();
 	}
 
 	~CacheThreader(){  }
 };
+
 
 #endif /* CACHETHREADER_H_ */
