@@ -65,3 +65,39 @@ Throughput = <b>6.5 million pixel get/set operations per second (~50 million pix
 Cache-hit-ratio (read): <b>78% (100%)</b>
 
 Timings (50 million pixel lookups per second = 20 nanosecond average per access) include all of the computation work: integer division after pixel summations and chrono time measurement latency.
+
+--------
+
+# Multi Level Cache
+
+If keys are integer type (char, int, size_t), then a L1 direct-mapped cache can be added in front of an L2 LRU cache to act as a single-thread front of an LLC cache given by user (which implements thread-safe set/get operations). Currently it supports only single-thread L1+L2+LLC:
+
+```CPP
+// simulating a backing-store
+std::vector<int> backingStore(10000000);
+
+// this is to be used by multi-level cache constructor and must implement getThreadSafe setThreadSafe methods.
+auto LLC = std::make_shared<LruClockCache<int,int>>(LLCsize,
+[ & ](int key) {
+  readmiss++;
+  return backingStore[key];
+},
+[ & ](int key, int value) {
+  writemiss++;
+  backingStore[key] = value;
+});
+
+// this is the multi-level cache that adds an L1 and an L2 infront of the LLC.
+ size_t L1size=1024*32; // this needs to be (power of 2) sized cache because it is direct-mapped (with N-way tags) cache
+ size_t L2size=1024*512; // this can be any size, it is LRU cache
+ CacheThreader<LruClockCache,int,int> cache(LLC,L1size,L2size);
+ cache.set(500,10); // if it is in L1 then returns directly in 1-2 nanoseconds
+                    // if it is not in L1 then goes L2 and returns within ~50 nanoseconds if its an L2 hit
+                    // if it is not L2 hit then it goes LLC in a thread-safe way and gets data much slower like 500 nanoseconds or more due to std::lock_guard
+ 
+cache.get(500); // same as set method but returns a value
+
+// currently multithreading not supported due to lack of write-invalidation method but with a few changes it is ready to be used as a read-only cache
+// when invalidation method is implemented, it will be multithreaded read-write cache. For now, it is single-thread read-write cache.
+```
+
