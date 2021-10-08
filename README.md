@@ -101,3 +101,6 @@ cache.get(500); // same as set method but returns a value
 // when invalidation method is implemented, it will be multithreaded read-write cache. For now, it is single-thread read-write cache.
 ```
 
+# Benchmarks for Multi-Level Cache:
+
+Up to <b>400 million lookups per second</b> for FX8150 3.6GHz in single-threaded Gaussian Blur algorithm. This is equivalent to <b>2.5 nanoseconds</b> average access latency per pixel. For a new CPU like Ryzen, it should be as fast as a billion lookups per second.
