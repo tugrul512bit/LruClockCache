@@ -99,6 +99,9 @@ cache.get(500); // same as set method but returns a value
 
 // currently multithreading not supported due to lack of write-invalidation method but with a few changes it is ready to be used as a read-only cache
 // when invalidation method is implemented, it will be multithreaded read-write cache. For now, it is single-thread read-write cache.
+
+cache.flush(); // write latest bits of data to the LLC
+LLC.flush(); // write latest bits of data to the backing store
 ```
 
 # Benchmarks for Multi-Level Cache:
