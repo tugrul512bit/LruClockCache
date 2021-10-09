@@ -11,7 +11,7 @@
 #include<vector>
 #include<functional>
 #include<mutex>
-
+#include<iostream>
 
 /* Direct-mapped cache implementation
  * Only usable for integer type keys
