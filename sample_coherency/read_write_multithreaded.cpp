@@ -1,6 +1,7 @@
 #include "DirectMappedMultiThreadCache.h"
 #include <map>
 #include <omp.h>
+#include <iostream>
 
 int main(int argC, char ** argV)
 {
