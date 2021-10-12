@@ -1,4 +1,4 @@
-#include<map>
+#include<vector>
 #include<iostream>
 #include<memory>
 #include "DirectMappedMultiThreadCache.h"
@@ -6,7 +6,8 @@
 
 int main()
 {
- 		std::map<int,int> backingStore;
+                // ok to access different indices multithreaded
+ 		std::vector<int> backingStore(100000);
 
 		auto LLC=std::make_shared<DirectMappedMultiThreadCache<int,int>>(20,
 				[&](int key){ return backingStore[key]; },
