@@ -26,50 +26,44 @@ class CacheThreader
 private:
 	// last level cache, slow because of lock-guard
 	std::shared_ptr<Cache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>> LLC;
-	int nThreads;
-	std::vector<std::shared_ptr<LruClockCache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>>> L2;
-	std::vector<std::shared_ptr<DirectMappedCache<CacheKey,CacheValue>>> L1;
+	std::shared_ptr<LruClockCache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>> L2;
+	std::shared_ptr<DirectMappedCache<CacheKey,CacheValue>> L1;
 
 
 public:
-	CacheThreader(std::shared_ptr<Cache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>> cacheLLC, int sizeCacheL1, int sizeCacheL2, int nThread=1)
+	CacheThreader(std::shared_ptr<Cache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>> cacheLLC, int sizeCacheL1, int sizeCacheL2)
 	{
 
 		LLC=cacheLLC;
-		nThreads = nThread;
 		// backing-store of L1 is LLC
-		for(int i=0;i<nThread;i++)
-		{
-			L2.push_back( std::make_shared<LruClockCache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>>(sizeCacheL2,[i,this](CacheKey key){
+			L2=std::make_shared<LruClockCache<CacheKey,CacheValue,CacheInternalCounterTypeInteger>>(sizeCacheL2,[this](CacheKey key){
 
 				return this->LLC->getThreadSafe(key);
-			},[i,this](CacheKey key, CacheValue value){
+			},[this](CacheKey key, CacheValue value){
 
 				this->LLC->setThreadSafe(key,value);
-			}));
-			L1.push_back( std::make_shared<DirectMappedCache<CacheKey,CacheValue>>(sizeCacheL1,[i,this](CacheKey key){
+			});
+			L1=std::make_shared<DirectMappedCache<CacheKey,CacheValue>>(sizeCacheL1,[this](CacheKey key){
 
-				return this->L2[i]->get(key);
-			},[i,this](CacheKey key, CacheValue value){
+				return this->L2->get(key);
+			},[this](CacheKey key, CacheValue value){
 
-				this->L2[i]->set(key,value);
-			}));
-		}
-
+				this->L2->set(key,value);
+			});
 	}
 
 	// get data from closest cache
 	// currently only 1 thread supported
 	const CacheValue get(CacheKey key) const
 	{
-		return L1[0]->get(key);
+		return L1->get(key);
 	}
 
 	// set data to closest cache
 	// currently only 1 thread supported
 	void set(CacheKey key, CacheValue value) const
 	{
-		L1[0]->set(key,value);
+		L1->set(key,value);
 	}
 
 	// currently only 1 thread supported for read+write
@@ -79,8 +73,8 @@ public:
 	// LLC needs to be flushed manually by main-thread
 	void flush()
 	{
-		L1[0]->flush();
-		L2[0]->flush();
+		L1->flush();
+		L2->flush();
 	}
 
 	~CacheThreader(){  }
