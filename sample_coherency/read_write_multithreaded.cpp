@@ -5,7 +5,8 @@
 
 int main(int argC, char ** argV)
 {
-	std::map<int,int> backingStore;
+        // ok to access different indices multithreaded
+	std::vector<int> backingStore(100000);
 
 	// single-level cache is inherently coherent with just using setThreadSafe getThreadSafe methods
 	// direct mapped cache has low hit ratio. LruClockCache is better but it has only 1 synchronization point (whole LRU is locked)
