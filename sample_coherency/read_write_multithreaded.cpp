@@ -1,5 +1,5 @@
 #include "DirectMappedMultiThreadCache.h"
-#include <map>
+#include <vector>
 #include <omp.h>
 #include <iostream>
 
