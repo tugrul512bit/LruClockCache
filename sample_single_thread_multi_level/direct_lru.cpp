@@ -3,6 +3,8 @@
 #include"DirectMappedCache.h"
 #include"LruClockCache.h"
 
+// up to a billion lookups per second for vectorizable+cache friendly access pattern
+// down to 50 million lookups per second for totally random access
 int main()
 {
 
