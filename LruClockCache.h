@@ -35,7 +35,6 @@ public:
 	// 				to let the cache automatically set data to backing-store
 	//				example: [&](MyClass key, MyAnotherClass value){ redis.set(key,value); }
 	//				takes a LruKey as key and LruValue as value
-
 	LruClockCache(ClockHandInteger numElements,
 				const std::function<LruValue(LruKey)> & readMiss,
 				const std::function<void(LruKey,LruValue)> & writeMiss):size(numElements),loadData(readMiss),saveData(writeMiss)
@@ -88,7 +87,7 @@ public:
 
 	// thread-safe but slower version of get()
 	inline
-	const LruValue getThreadSafe(const LruKey & key)  noexcept
+	const LruValue getThreadSafe(const LruKey & key) noexcept
 	{
 		std::lock_guard<std::mutex> lg(mut);
 		return accessClock2Hand(key,nullptr);
@@ -162,7 +161,8 @@ public:
 			LruKey oldKey;
 			while(ctrFound==-1)
 			{
-				// eviction hand lowers the "chance" status down if its 1 but slot is saved from eviction
+				// second-chance hand lowers the "chance" status down if its 1 but slot is saved from eviction
+				// 1 more chance to be in a cache-hit until eviction-hand finds this
 				if(chanceToSurviveBuffer[ctr]>0)
 				{
 					chanceToSurviveBuffer[ctr]=0;
@@ -175,7 +175,7 @@ public:
 					ctr=0;
 				}
 
-				// unlucky slot is selected for eviction
+				// unlucky slot is selected for eviction by eviction hand
 				if(chanceToSurviveBuffer[ctrEvict]==0)
 				{
 					ctrFound=ctrEvict;
@@ -268,7 +268,7 @@ public:
 
 
 private:
-	ClockHandInteger size;
+	const ClockHandInteger size;
 	std::mutex mut;
 	std::unordered_map<LruKey,ClockHandInteger> mapping;
 	std::vector<LruValue> valueBuffer;
