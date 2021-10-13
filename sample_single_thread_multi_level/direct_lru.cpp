@@ -17,7 +17,7 @@ int main()
   );
 
   // L1 is client of L2
-  DirectMappedCache<size_t,char> L1(100,
+  DirectMappedCache<size_t,char> L1(128 /* power of 2 */,
     [&](size_t key){ return L2.get(key);},
     [&](size_t key, char value){ L2.set(key,value);}
   );
