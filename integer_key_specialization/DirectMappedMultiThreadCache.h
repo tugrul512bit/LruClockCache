@@ -2,7 +2,7 @@
  * DirectMappedCache.h
  *
  *  Created on: Oct 8, 2021
- *      Author: root
+ *      Author: tugrul
  */
 
 #ifndef DIRECTMAPPEDMULTITHREADCACHE_H_
@@ -17,8 +17,8 @@
  *       since locking protects only items/keys, also the user should make cache-miss functions thread-safe (i.e. adding a lock-guard)
  *       unless backing-store is thread-safe already (or has multi-thread support already)
  * Only usable for integer type keys and intended to be used as LLC(last level cache) for CacheThreader instances
- * 						to optimize contentions out in multithreaded read-only scenarios
- *	also can be used alone, as a read+write multi-threaded cache using getThreadSafe setThreadSafe methods but cache-hit ratio will not be good
+ * 															to optimize contentions out in multithreaded read-only scenarios
+ * Can be used alone, as a read+write multi-threaded cache using getThreadSafe setThreadSafe methods but cache-hit ratio will not be good
  * CacheKey: type of key (only integers: int, char, size_t)
  * CacheValue: type of value that is bound to key (same as above)
  * InternalKeyTypeInteger: type of tag found after modulo operationa (is important for maximum cache size. unsigned char = 255, unsigned int=1024*1024*1024*4)
