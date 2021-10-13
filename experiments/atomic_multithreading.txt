@@ -33,7 +33,7 @@ class CachePipe
   
   void producerPush(CacheCommand cmd)
   {
-    char16_t cur=head.fetch_add(1);
+    uint16_t cur=head.fetch_add(1);
     bool bus=cmdQ[cur].busy.load(std::memory_order::acq);
     while(!bus)
     {
@@ -46,7 +46,7 @@ class CachePipe
   
   CacheCommand consumerPop()
   {
-    char16_t cur=tail++;
+    uint16_t cur=tail++;
     bool bus=cmdQ[cur].busy.load(std::memory_order::acq);
     while(bus)
     {
@@ -61,8 +61,8 @@ class CachePipe
   
   private:
   std::vector<CacheCommand> cmdQ;
-  std::atomic<char16_t> head;
-  char16_t tail;
+  std::atomic<uint16_t> head;
+  uint16_t tail;
   std::atomic<bool> busy;
 };
 
