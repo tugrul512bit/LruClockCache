@@ -26,3 +26,32 @@ int main(int argC, char ** argV)
 	}
 	return 0;
 }
+
+
+int main2()
+{
+	SomeBackingStoreThatAllowsMultithreadedAccessToDifferentKeys backingStore;
+	// has better hit-ratio than direct-mapped cache, still coherent, multithreaded
+	// 1024: number of sets (any power-of-2)
+	// cacheSize/1024: number of tags per set (1 set = 1 LruClockCache with cacheSize/1024 number of tags)
+	NWaySetAssociativeMultiThreadCache <int, int > cache(1024,cacheSize/(1024),[ & ](int key) {
+		// no two threads will read same key simultaneously here
+		// safe
+		return backingStore[key];
+	},
+	[ & ](int key, int value) {
+		// no two threads will write to same key simultaneously here
+		// safe
+		backingStore[key] = value;
+	});
+	// call this in a thread
+	cache.setThreadSafe(5,5);
+	
+	// call this from another thread
+	auto val = cache.getThreadSafe(5);
+	
+	// the more threads, the better average latency per access
+	auto val2 = cache.getThreadSafe(100);
+
+	return 0;	
+}
