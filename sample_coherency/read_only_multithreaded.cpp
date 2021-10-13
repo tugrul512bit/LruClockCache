@@ -9,7 +9,7 @@ int main()
                 // ok to access different indices multithreaded
  		std::vector<int> backingStore(100000);
 
-		auto LLC=std::make_shared<DirectMappedMultiThreadCache<int,int>>(20,
+		auto LLC=std::make_shared<DirectMappedMultiThreadCache<int,int>>(16 /* power of 2 */,
 				[&](int key){ return backingStore[key]; },
 				[&](int key, int value){ backingStore[key]=value; });
 
@@ -22,7 +22,7 @@ int main()
 		for(int i=0;i<8;i++)
 		{
 			int L2size = 10;
-			int L1size = 5;
+			int L1size = 4 /* power of 2 */;
       // each thread creates its own private cache connected to the common LLC instance
 			CacheThreader<DirectMappedMultiThreadCache,int,int> multiLevelCache(LLC,L1size,L2size);
 			std::string result;
