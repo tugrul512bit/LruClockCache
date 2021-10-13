@@ -23,7 +23,7 @@ template<typename CacheCommand>
 class CachePipe
 {
   public:
-  CachePipe(int size)
+  CachePipe()
   {
     busy.store(0);
     head.store(0);
