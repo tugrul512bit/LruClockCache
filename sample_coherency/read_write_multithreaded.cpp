@@ -1,4 +1,5 @@
 #include "DirectMappedMultiThreadCache.h"
+#include "NWaySetAssociatedMultiThreadCache.h"
 #include <vector>
 #include <omp.h>
 #include <iostream>
