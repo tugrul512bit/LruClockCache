@@ -14,9 +14,10 @@
 
 
 /* Direct-mapped cache implementation with granular locking (per-tag)
+ *       Only usable for integer type keys in range [0,maxPositive-1]
  *       since locking protects only items/keys, also the user should make cache-miss functions thread-safe (i.e. adding a lock-guard)
  *       unless backing-store is thread-safe already (or has multi-thread support already)
- * Only usable for integer type keys and intended to be used as LLC(last level cache) for CacheThreader instances
+ * Intended to be used as LLC(last level cache) for CacheThreader instances
  * 															to optimize contentions out in multithreaded read-only scenarios
  * Can be used alone, as a read+write multi-threaded cache using getThreadSafe setThreadSafe methods but cache-hit ratio will not be good
  * CacheKey: type of key (only integers: int, char, size_t)
@@ -47,7 +48,7 @@ public:
 		{
 			valueBuffer.push_back(CacheValue());
 			isEditedBuffer.push_back(0);
-			keyBuffer.push_back(CacheKey());
+			keyBuffer.push_back(CacheKey()-1);
 		}
 	}
 
