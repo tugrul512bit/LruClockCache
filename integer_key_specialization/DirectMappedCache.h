@@ -2,7 +2,7 @@
  * DirectMappedCache.h
  *
  *  Created on: Oct 8, 2021
- *      Author: tugrul
+ *      Author: root
  */
 
 #ifndef DIRECTMAPPEDCACHE_H_
@@ -11,10 +11,10 @@
 #include<vector>
 #include<functional>
 #include<mutex>
-#include<iostream>
+
 
 /* Direct-mapped cache implementation
- * Only usable for integer type keys
+ * Only usable for integer type keys in range [0,maxPositive-1]
  *
  * CacheKey: type of key (only integers: int, char, size_t)
  * CacheValue: type of value that is bound to key (same as above)
@@ -42,7 +42,7 @@ public:
 		{
 			valueBuffer.push_back(CacheValue());
 			isEditedBuffer.push_back(0);
-			keyBuffer.push_back(CacheKey());
+			keyBuffer.push_back(CacheKey()-1);// mapping of 0+ allowed
 		}
 	}
 
