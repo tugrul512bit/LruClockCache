@@ -39,6 +39,18 @@ public:
 		}
 	}
 
+	// allocates 64k tags per set (1024 sets = 64M cache size)
+	NWaySetAssociativeMultiThreadCache(size_t numberOfSets,
+			const std::function<CacheValue(CacheKey)> & readMiss,
+			const std::function<void(CacheKey,CacheValue)> & writeMiss):numSet(numberOfSets),numSetM1(numberOfSets-1),numTag(1024*64)
+	{
+
+		for(CacheHandInteger i=0;i<numSet;i++)
+		{
+			sets.push_back(std::make_shared<LruClockCache<CacheKey,CacheValue,CacheHandInteger>>(numTag,readMiss,writeMiss));
+		}
+	}
+
 	const CacheValue get(CacheKey key) const noexcept
 	{
 		// select set
