@@ -25,6 +25,12 @@ cache.set("world coordinates 1502 35 1999",chunk);
 cache.flush(); // clears all pending-writes in the cache and writes to backing-store
 ```
 
+
+[![160x speedup on noise-generation for procedural terrain](https://i.snipboard.io/iAXH5Z.jpg)](https://www.youtube.com/watch?v=Sw8fh3c7ESQ "160x speedup on noise-generation for procedural terrain!")
+
+
+
+
 # Benchmarks:
 
 Up to <b>50 million lookups per second</b> on an old CPU like FX8150 under heavy get/set usage.
