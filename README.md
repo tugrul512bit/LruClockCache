@@ -27,7 +27,7 @@ cache.flush(); // clears all pending-writes in the cache and writes to backing-s
 
 <b>160x speedup on noise-generation for procedural terrain (2x speedup against AVX/SIMD optimized version):</b>
 
-[![160x speedup on noise-generation for procedural terrain (click to watch video)](https://i.snipboard.io/iAXH5Z.jpg)](https://www.youtube.com/watch?v=Sw8fh3c7ESQ "160x speedup on noise-generation for procedural terrain!")
+[![160x speedup on noise-generation for procedural terrain](https://i.snipboard.io/iAXH5Z.jpg)](https://www.youtube.com/watch?v=Sw8fh3c7ESQ "160x speedup on noise-generation for procedural terrain! (click to watch video)")
 
 
 
