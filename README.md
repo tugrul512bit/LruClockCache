@@ -25,6 +25,7 @@ cache.set("world coordinates 1502 35 1999",chunk);
 cache.flush(); // clears all pending-writes in the cache and writes to backing-store
 ```
 
+<b>160x speedup on noise-generation for procedural terrain:</b>
 
 [![160x speedup on noise-generation for procedural terrain](https://i.snipboard.io/iAXH5Z.jpg)](https://www.youtube.com/watch?v=Sw8fh3c7ESQ "160x speedup on noise-generation for procedural terrain!")
 
