@@ -11,7 +11,7 @@
 #include<vector>
 #include<memory>
 #include<functional>
-#include"LruClockCache.h"
+#include"../LruClockCache.h"
 
 /* N parallel LRU approximations (Clock Second Chance)
 * Each with own mutex
