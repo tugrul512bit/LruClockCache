@@ -14,7 +14,7 @@
 #include<thread>
 #include<atomic>
 #include"DirectMappedCache.h"
-#include"LruClockCache.h"
+#include"../LruClockCache.h"
 /* L1: direct mapped cache, for each thread
  * L2: LRU clock cache, for each thread (size must be integer-power of 2)
  * LLC: user-defined cache with thread-safe get/set methods that is slower but global
