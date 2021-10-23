@@ -1,8 +1,8 @@
 #include<vector>
 #include<iostream>
 #include<memory>
-#include "DirectMappedMultiThreadCache.h"
-#include "CacheThreader.h"
+#include "../integer_key_specialization/DirectMappedMultiThreadCache.h"
+#include "../integer_key_specialization/CacheThreader.h"
 
 int main()
 {
