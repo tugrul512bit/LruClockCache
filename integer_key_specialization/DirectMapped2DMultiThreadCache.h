@@ -40,15 +40,15 @@ public:
 	//				takes a CacheKey as key and CacheValue as value
 	// numElementsX: has to be integer-power of 2 (e.g. 2,4,8,16,...)
 	// numElementsY: has to be integer-power of 2 (e.g. 2,4,8,16,...)
-	DirectMapped2DMultiThreadCache(InternalKeyTypeInteger numElementsX,InternalKeyTypeInteger numElementsY,
+	DirectMapped2DMultiThreadCache(CacheKey numElementsX,CacheKey numElementsY,
 				const std::function<CacheValue(CacheKey,CacheKey)> & readMiss,
 				const std::function<void(CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(numElementsX),sizeY(numElementsY),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),loadData(readMiss),saveData(writeMiss)
 	{
 		mut = std::vector<std::mutex>(numElementsX*numElementsY);
 		// initialize buffers
-		for(InternalKeyTypeInteger i=0;i<numElementsX;i++)
+		for(size_t i=0;i<numElementsX;i++)
 		{
-			for(InternalKeyTypeInteger j=0;j<numElementsY;j++)
+			for(size_t j=0;j<numElementsY;j++)
 			{
 				valueBuffer.push_back(CacheValue());
 				isEditedBuffer.push_back(0);
@@ -129,8 +129,8 @@ public:
 	{
 
 		// find tag mapped to the key
-		InternalKeyTypeInteger tagX = keyX & sizeXM1;
-		InternalKeyTypeInteger tagY = keyY & sizeYM1;
+		CacheKey tagX = keyX & sizeXM1;
+		CacheKey tagY = keyY & sizeYM1;
 		const size_t index = tagX*(size_t)sizeY+tagY;
 		std::lock_guard<std::mutex> lg(mut[index]); // N parallel locks in-flight = less contention in multi-threading
 
@@ -215,10 +215,10 @@ public:
 	{
 
 		// find tag mapped to the key
-		InternalKeyTypeInteger tagX = keyX & sizeXM1;
-		InternalKeyTypeInteger tagY = keyY & sizeYM1;
+		CacheKey tagX = keyX & sizeXM1;
+		CacheKey tagY = keyY & sizeYM1;
 
-		const size_t index = tagX*(size_t)sizeY+tagY;
+		const size_t index = tagX*sizeY+tagY;
 
 		// compare keys
 		const auto oldKey2D = keyBuffer[index];

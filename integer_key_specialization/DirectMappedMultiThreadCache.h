@@ -38,13 +38,13 @@ public:
 	//				example: [&](MyClass key, MyAnotherClass value){ redis.set(key,value); }
 	//				takes a CacheKey as key and CacheValue as value
 	// numElements: has to be integer-power of 2 (e.g. 2,4,8,16,...)
-	DirectMappedMultiThreadCache(InternalKeyTypeInteger numElements,
+	DirectMappedMultiThreadCache(CacheKey numElements,
 				const std::function<CacheValue(CacheKey)> & readMiss,
 				const std::function<void(CacheKey,CacheValue)> & writeMiss):size(numElements),sizeM1(numElements-1),loadData(readMiss),saveData(writeMiss)
 	{
 		mut = std::vector<std::mutex>(numElements);
 		// initialize buffers
-		for(InternalKeyTypeInteger i=0;i<numElements;i++)
+		for(size_t i=0;i<numElements;i++)
 		{
 			valueBuffer.push_back(CacheValue());
 			isEditedBuffer.push_back(0);
@@ -113,7 +113,7 @@ public:
 	{
 		try
 		{
-		for (CacheKey i=0;i<size;i++)
+		for (size_t i=0;i<size;i++)
 		{
 		  if (isEditedBuffer[i] == 1)
 		  {
@@ -126,14 +126,14 @@ public:
 		}catch(std::exception &ex){ std::cout<<ex.what()<<std::endl; }
 	}
 
-	// CLOCK algorithm with 2 hand counters (1 for second chance for a cache slot to survive, 1 for eviction of cache slot)
+	// direct mapped cache element access, locked
 	// opType=0: get
 	// opType=1: set
 	CacheValue const accessDirectLocked(const CacheKey & key,const CacheValue * value, const bool opType = 0)
 	{
 
 		// find tag mapped to the key
-		InternalKeyTypeInteger tag = key & sizeM1;
+		CacheKey tag = key & sizeM1;
 		std::lock_guard<std::mutex> lg(mut[tag]); // N parallel locks in-flight = less contention in multi-threading
 
 		// compare keys
@@ -209,11 +209,14 @@ public:
 		}
 	}
 
+	// direct mapped cache element access
+	// opType 0 = get
+	// opType 1 = set
 	CacheValue const accessDirect(const CacheKey & key,const CacheValue * value, const bool opType = 0)
 	{
 
 		// find tag mapped to the key
-		InternalKeyTypeInteger tag = key & sizeM1;
+		CacheKey tag = key & sizeM1;
 
 		// compare keys
 		if(keyBuffer[tag] == key)

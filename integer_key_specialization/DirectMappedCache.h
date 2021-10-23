@@ -38,7 +38,7 @@ public:
 				const std::function<void(CacheKey,CacheValue)> & writeMiss):size(numElements),sizeM1(numElements-1),loadData(readMiss),saveData(writeMiss)
 	{
 		// initialize buffers
-		for(CacheKey i=0;i<numElements;i++)
+		for(size_t i=0;i<numElements;i++)
 		{
 			valueBuffer.push_back(CacheValue());
 			isEditedBuffer.push_back(0);
@@ -109,7 +109,7 @@ public:
 	{
 		try
 		{
-		for (CacheKey i=0;i<size;i++)
+		for (size_t i=0;i<size;i++)
 		{
 		  if (isEditedBuffer[i] == 1)
 		  {

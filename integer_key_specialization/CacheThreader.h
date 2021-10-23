@@ -2,7 +2,7 @@
  * CacheThreader.h
  *
  *  Created on: Oct 7, 2021
- *      Author: root
+ *      Author: tugrul
  */
 
 #ifndef CACHETHREADER_H_
@@ -54,6 +54,7 @@ public:
 
 	// get data from closest cache
 	// currently only 1 thread supported
+	inline
 	const CacheValue get(CacheKey key) const
 	{
 		return L1->get(key);
@@ -61,6 +62,7 @@ public:
 
 	// set data to closest cache
 	// currently only 1 thread supported
+	inline
 	void set(CacheKey key, CacheValue value) const
 	{
 		L1->set(key,value);

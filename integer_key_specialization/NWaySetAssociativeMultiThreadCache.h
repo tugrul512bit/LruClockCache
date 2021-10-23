@@ -33,7 +33,7 @@ public:
 			const std::function<void(CacheKey,CacheValue)> & writeMiss):numSet(numberOfSets),numSetM1(numberOfSets-1),numTag(numberOfTagsPerLRU)
 	{
 
-		for(CacheHandInteger i=0;i<numSet;i++)
+		for(size_t i=0;i<numSet;i++)
 		{
 			sets.push_back(std::make_shared<LruClockCache<CacheKey,CacheValue,CacheHandInteger>>(numTag,readMiss,writeMiss));
 		}
@@ -45,52 +45,54 @@ public:
 			const std::function<void(CacheKey,CacheValue)> & writeMiss):numSet(numberOfSets),numSetM1(numberOfSets-1),numTag(1024*64)
 	{
 
-		for(CacheHandInteger i=0;i<numSet;i++)
+		for(size_t i=0;i<numSet;i++)
 		{
 			sets.push_back(std::make_shared<LruClockCache<CacheKey,CacheValue,CacheHandInteger>>(numTag,readMiss,writeMiss));
 		}
 	}
 
+	inline
 	const CacheValue get(CacheKey key) const noexcept
 	{
 		// select set
-		CacheHandInteger set = key & numSetM1;
+		CacheKey set = key & numSetM1;
 		return sets[set]->get(key);
 	}
 
+	inline
 	void set(CacheKey key, CacheValue value) const noexcept
 	{
 		// select set
-		CacheHandInteger set = key & numSetM1;
+		CacheKey set = key & numSetM1;
 		sets[set]->set(key,value);
 	}
 
 	const CacheValue getThreadSafe(CacheKey key) const noexcept
 	{
 		// select set
-		CacheHandInteger set = key & numSetM1;
+		CacheKey set = key & numSetM1;
 		return sets[set]->getThreadSafe(key);
 	}
 
 	void setThreadSafe(CacheKey key, CacheValue value) const noexcept
 	{
 		// select set
-		CacheHandInteger set = key & numSetM1;
+		CacheKey set = key & numSetM1;
 		sets[set]->setThreadSafe(key,value);
 	}
 
 	void flush()
 	{
-		for(CacheHandInteger i=0;i<numSet;i++)
+		for(size_t i=0;i<numSet;i++)
 		{
 			sets[i]->flush();
 		}
 	}
 
 private:
-	const CacheHandInteger numSet;
-	const CacheHandInteger numSetM1;
-	const CacheHandInteger numTag;
+	const CacheKey numSet;
+	const CacheKey numSetM1;
+	const CacheKey numTag;
 	std::vector<std::shared_ptr<LruClockCache<CacheKey,CacheValue,CacheHandInteger>>> sets;
 };
 
