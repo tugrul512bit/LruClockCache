@@ -122,7 +122,7 @@ public:
 		}catch(std::exception &ex){ std::cout<<ex.what()<<std::endl; }
 	}
 
-	// CLOCK algorithm with 2 hand counters (1 for second chance for a cache slot to survive, 1 for eviction of cache slot)
+	// direct mapped access
 	// opType=0: get
 	// opType=1: set
 	CacheValue const accessDirect(const CacheKey & key,const CacheValue * value, const bool opType = 0)
