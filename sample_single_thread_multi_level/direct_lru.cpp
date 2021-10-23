@@ -1,7 +1,7 @@
 #include<iostream>
 #include<vector>
-#include"DirectMappedCache.h"
-#include"LruClockCache.h"
+#include"../integer_key_specialization/DirectMappedCache.h"
+#include"../LruClockCache.h"
 
 // up to a billion lookups per second for vectorizable+cache friendly access pattern
 // down to 50 million lookups per second for totally random access
@@ -10,7 +10,7 @@ int main()
 
   std::vector<char> backingStore(10000);
 
-  L2 is client of backing store
+  // L2 is client of backing store
   LruClockCache<size_t,char> L2(1000,
     [&](size_t key){ return backingStore[key];},
     [&](size_t key, char value){ backingStore[key]=value;}
