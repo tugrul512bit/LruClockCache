@@ -312,7 +312,7 @@ private:
 	struct MutexWithoutFalseSharing
 	{
 		std::mutex mut;
-		char padding[64-sizeof(std::mutex)];
+		char padding[64-sizeof(std::mutex) <= 0 ? 4:64-sizeof(std::mutex)];
 	};
 	const CacheKey sizeX;
 	const CacheKey sizeY;
