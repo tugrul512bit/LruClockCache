@@ -2,7 +2,7 @@
  * DirectMapped3DMultiThreadCache.h
  *
  *  Created on: Oct 24, 2021
- *      Author: tugrul
+ *      Author: root
  */
 
 #ifndef DIRECTMAPPED3DMULTITHREADCACHE_H_
@@ -129,7 +129,7 @@ public:
 	// direct mapped cache element access, locked per item for parallelism
 	// opType=0: get
 	// opType=1: set
-	CacheValue const accessDirectLocked(const CacheKey & keyX, const CacheKey & keyY, const CacheKey & keyZ,const CacheValue * value, const bool opType = 0)
+	CacheValue accessDirectLocked(const CacheKey & keyX, const CacheKey & keyY, const CacheKey & keyZ,const CacheValue * value, const bool opType = 0)
 	{
 
 		// find tag mapped to the key
@@ -216,7 +216,7 @@ public:
 	// direct mapped cache element access
 	// opType=0: get
 	// opType=1: set
-	CacheValue const accessDirect(const CacheKey & keyX, const CacheKey & keyY, CacheKey & keyZ, const CacheValue * value, const bool opType = 0)
+	CacheValue accessDirect(const CacheKey & keyX, const CacheKey & keyY, const CacheKey & keyZ, const CacheValue * value, const bool opType = 0)
 	{
 
 		// find tag mapped to the key
