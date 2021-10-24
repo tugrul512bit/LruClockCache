@@ -15,13 +15,13 @@
 
 
 /* 2D Direct-mapped cache implementation with granular locking (per-tag)
- *       Only usable for integer type keys in range [0,maxPositive-1]
+ *       Only usable for integer type keys in range [0,maxPositive-1] (if key is int then "-1" not usable, if key is uint16_t then "65535" not usable)
  *       since locking protects only items/keys, also the user should make cache-miss functions thread-safe (i.e. adding a lock-guard)
  *       unless backing-store is thread-safe already (or has multi-thread support already)
  * Intended to be used as LLC(last level cache) for CacheThreader instances with getThreadSafe setThreadSafe methods or single threaded with get/set
  * 															to optimize contentions out in multithreaded read-only scenarios
  * Can be used alone, as a read+write multi-threaded cache using getThreadSafe setThreadSafe methods but cache-hit ratio will not be good
- * CacheKey: type of key (only integers: int, char, size_t)
+ * CacheKey: type of key (only integers: int, char, size_t, uint16_t, ...)
  * CacheValue: type of value that is bound to key (same as above)
  * InternalKeyTypeInteger: type of tag found after modulo operationa (is important for maximum cache size. unsigned char = 255, unsigned int=1024*1024*1024*4)
  */
@@ -32,11 +32,11 @@ public:
 	// allocates buffers for numElementsX x numElementsY number of cache slots/lanes
 	// readMiss: 	cache-miss for read operations. User needs to give this function
 	// 				to let the cache automatically get data from backing-store
-	//				example: [&](MyClass key){ return redis.get(key); }
+	//				example: [&](MyClass keyX, MyClass keyY){ return backingStore.get(key); }
 	//				takes a CacheKey as key, returns CacheValue as value
 	// writeMiss: 	cache-miss for write operations. User needs to give this function
 	// 				to let the cache automatically set data to backing-store
-	//				example: [&](MyClass key, MyAnotherClass value){ redis.set(key,value); }
+	//				example: [&](MyClass keyX, MyClass keyY, MyAnotherClass value){ backingStore.set(key,value); }
 	//				takes a CacheKey as key and CacheValue as value
 	// numElementsX: has to be integer-power of 2 (e.g. 2,4,8,16,...)
 	// numElementsY: has to be integer-power of 2 (e.g. 2,4,8,16,...)
