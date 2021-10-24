@@ -45,7 +45,7 @@ public:
 				const std::function<CacheValue(CacheKey,CacheKey,CacheKey)> & readMiss,
 				const std::function<void(CacheKey,CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(numElementsX),sizeY(numElementsY),sizeZ(numElementsZ),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),sizeZM1(numElementsZ-1),loadData(readMiss),saveData(writeMiss)
 	{
-		mut = std::vector<std::mutex>(numElementsX*numElementsY);
+		mut = std::vector<std::mutex>(numElementsX*numElementsY*numElementsZ);
 		// initialize buffers
 		for(size_t i=0;i<numElementsX;i++)
 		{
