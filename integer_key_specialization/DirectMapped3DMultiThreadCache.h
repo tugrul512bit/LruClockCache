@@ -45,7 +45,7 @@ public:
 				const std::function<CacheValue(CacheKey,CacheKey,CacheKey)> & readMiss,
 				const std::function<void(CacheKey,CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(numElementsX),sizeY(numElementsY),sizeZ(numElementsZ),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),sizeZM1(numElementsZ-1),loadData(readMiss),saveData(writeMiss)
 	{
-		mut = std::vector<std::mutex>(numElementsX*numElementsY*numElementsZ);
+		mut = std::vector<MutexWithoutFalseSharing>(numElementsX*numElementsY*numElementsZ);
 		// initialize buffers
 		for(size_t i=0;i<numElementsX;i++)
 		{
@@ -137,7 +137,7 @@ public:
 		CacheKey tagY = keyY & sizeYM1;
 		CacheKey tagZ = keyZ & sizeZM1;
 		const size_t index = tagX*(size_t)sizeY*(size_t)sizeZ+tagY*(size_t)sizeZ + tagZ;
-		std::lock_guard<std::mutex> lg(mut[index]); // N parallel locks in-flight = less contention in multi-threading
+		std::lock_guard<std::mutex> lg(mut[index].mut); // N parallel locks in-flight = less contention in multi-threading
 
 		// compare keys
 		const auto oldKey3D = keyBuffer[index];
@@ -309,6 +309,11 @@ private:
 		CacheKey3D(CacheKey xPrm, CacheKey yPrm, CacheKey zPrm):x(xPrm),y(yPrm),z(zPrm) { }
 		CacheKey x,y,z;
 	};
+	struct MutexWithoutFalseSharing
+	{
+		std::mutex mut;
+		char padding[64-sizeof(std::mutex)];
+	};
 	const CacheKey sizeX;
 	const CacheKey sizeY;
 	const CacheKey sizeZ;
@@ -316,7 +321,7 @@ private:
 	const CacheKey sizeYM1;
 	const CacheKey sizeZM1;
 
-	std::vector<std::mutex> mut;
+	std::vector<MutexWithoutFalseSharing> mut;
 	std::vector<CacheValue> valueBuffer;
 	std::vector<unsigned char> isEditedBuffer;
 	std::vector<CacheKey3D> keyBuffer;
