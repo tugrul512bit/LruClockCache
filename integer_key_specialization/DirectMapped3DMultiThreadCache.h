@@ -2,7 +2,7 @@
  * DirectMapped3DMultiThreadCache.h
  *
  *  Created on: Oct 24, 2021
- *      Author: root
+ *      Author: tugrul
  */
 
 #ifndef DIRECTMAPPED3DMULTITHREADCACHE_H_
@@ -27,7 +27,7 @@
  * InternalKeyTypeInteger: type of tag found after modulo operationa (is important for maximum cache size. unsigned char = 255, unsigned int=1024*1024*1024*4)
  */
 template<	typename CacheKey, typename CacheValue, typename InternalKeyTypeInteger=size_t>
-class DirectMapped2DMultiThreadCache
+class DirectMapped3DMultiThreadCache
 {
 public:
 	// allocates buffers for numElementsX x numElementsY x numElementsZ number of cache slots/lanes
@@ -41,7 +41,7 @@ public:
 	//				takes a CacheKey as key and CacheValue as value
 	// numElementsX: has to be integer-power of 2 (e.g. 2,4,8,16,...)
 	// numElementsY: has to be integer-power of 2 (e.g. 2,4,8,16,...)
-	DirectMapped2DMultiThreadCache(CacheKey numElementsX,CacheKey numElementsY,CacheKey numElementsZ,
+	DirectMapped3DMultiThreadCache(CacheKey numElementsX,CacheKey numElementsY,CacheKey numElementsZ,
 				const std::function<CacheValue(CacheKey,CacheKey,CacheKey)> & readMiss,
 				const std::function<void(CacheKey,CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(numElementsX),sizeY(numElementsY),sizeZ(numElementsZ),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),sizeZM1(numElementsZ-1),loadData(readMiss),saveData(writeMiss)
 	{
@@ -216,7 +216,7 @@ public:
 	// direct mapped cache element access
 	// opType=0: get
 	// opType=1: set
-	CacheValue const accessDirect(const CacheKey & keyX, const CacheKey & keyY,const CacheValue * value, const bool opType = 0)
+	CacheValue const accessDirect(const CacheKey & keyX, const CacheKey & keyY, CacheKey & keyZ, const CacheValue * value, const bool opType = 0)
 	{
 
 		// find tag mapped to the key
