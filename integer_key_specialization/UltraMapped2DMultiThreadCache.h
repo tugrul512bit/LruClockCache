@@ -1,12 +1,12 @@
 /*
- * DirectMapped2DMultiThreadCache.h
+ * UltraMapped2DMultiThreadCache.h
  *
- *  Created on: Oct 23, 2021
- *      Author: tugrul
+ *  Created on: Oct 24, 2021
+ *      Author: root
  */
 
-#ifndef DIRECTMAPPED2DMULTITHREADCACHE_H_
-#define DIRECTMAPPED2DMULTITHREADCACHE_H_
+#ifndef ULTRAMAPPED2DMULTITHREADCACHE_H_
+#define ULTRAMAPPED2DMULTITHREADCACHE_H_
 
 
 #include<vector>
@@ -14,7 +14,10 @@
 #include<mutex>
 
 
-/* 2D Direct-mapped cache implementation with granular locking (per-tag)
+/* 2D Direct-mapped constant-sized (256x256) cache implementation with granular locking (per-tag)
+ * get/set methods are 10%-20% faster to cache-hit than non-ultra version
+ * multi-threading / locking has much higher latency so it may not matter to use this version for getThreadSafe() setThreadSafe()
+ * contains zero computation for tag search
  *       Only usable for integer type keys in range [0,maxPositive-1]
  *       since locking protects only items/keys, also the user should make cache-miss functions thread-safe (i.e. adding a lock-guard)
  *       unless backing-store is thread-safe already (or has multi-thread support already)
@@ -26,7 +29,7 @@
  * InternalKeyTypeInteger: type of tag found after modulo operationa (is important for maximum cache size. unsigned char = 255, unsigned int=1024*1024*1024*4)
  */
 template<	typename CacheKey, typename CacheValue, typename InternalKeyTypeInteger=size_t>
-class DirectMapped2DMultiThreadCache
+class UltraMapped2DMultiThreadCache
 {
 public:
 	// allocates buffers for numElementsX x numElementsY number of cache slots/lanes
@@ -40,15 +43,15 @@ public:
 	//				takes a CacheKey as key and CacheValue as value
 	// numElementsX: has to be integer-power of 2 (e.g. 2,4,8,16,...)
 	// numElementsY: has to be integer-power of 2 (e.g. 2,4,8,16,...)
-	DirectMapped2DMultiThreadCache(CacheKey numElementsX,CacheKey numElementsY,
+	UltraMapped2DMultiThreadCache(
 				const std::function<CacheValue(CacheKey,CacheKey)> & readMiss,
-				const std::function<void(CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(numElementsX),sizeY(numElementsY),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),loadData(readMiss),saveData(writeMiss)
+				const std::function<void(CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(256),sizeY(256),loadData(readMiss),saveData(writeMiss)
 	{
-		mut = std::vector<std::mutex>(numElementsX*numElementsY);
+		mut = std::vector<std::mutex>(sizeX*sizeY);
 		// initialize buffers
-		for(size_t i=0;i<numElementsX;i++)
+		for(size_t i=0;i<sizeX;i++)
 		{
-			for(size_t j=0;j<numElementsY;j++)
+			for(size_t j=0;j<sizeY;j++)
 			{
 				valueBuffer.push_back(CacheValue());
 				isEditedBuffer.push_back(0);
@@ -129,9 +132,9 @@ public:
 	{
 
 		// find tag mapped to the key
-		CacheKey tagX = keyX & sizeXM1;
-		CacheKey tagY = keyY & sizeYM1;
-		const size_t index = tagX*(size_t)sizeY+tagY;
+		unsigned char tagX = keyX;
+		unsigned char tagY = keyY;
+		const int index = tagX*(int)sizeY+tagY;
 		std::lock_guard<std::mutex> lg(mut[index]); // N parallel locks in-flight = less contention in multi-threading
 
 		// compare keys
@@ -215,10 +218,10 @@ public:
 	{
 
 		// find tag mapped to the key
-		CacheKey tagX = keyX & sizeXM1;
-		CacheKey tagY = keyY & sizeYM1;
+		unsigned char tagX = keyX;
+		unsigned char tagY = keyY;
 
-		const size_t index = tagX*(size_t)sizeY+tagY;
+		const int index = tagX*(int)sizeY+tagY;
 
 		// compare keys
 		const auto oldKey2D = keyBuffer[index];
@@ -305,8 +308,6 @@ private:
 	};
 	const CacheKey sizeX;
 	const CacheKey sizeY;
-	const CacheKey sizeXM1;
-	const CacheKey sizeYM1;
 
 	std::vector<std::mutex> mut;
 	std::vector<CacheValue> valueBuffer;
@@ -321,4 +322,5 @@ private:
 
 
 
-#endif /* DIRECTMAPPED2DMULTITHREADCACHE_H_ */
+
+#endif /* ULTRAMAPPED2DMULTITHREADCACHE_H_ */
