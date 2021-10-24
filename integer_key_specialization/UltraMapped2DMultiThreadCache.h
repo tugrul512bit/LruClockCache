@@ -2,7 +2,7 @@
  * UltraMapped2DMultiThreadCache.h
  *
  *  Created on: Oct 24, 2021
- *      Author: root
+ *      Author: tugrul
  */
 
 #ifndef ULTRAMAPPED2DMULTITHREADCACHE_H_
