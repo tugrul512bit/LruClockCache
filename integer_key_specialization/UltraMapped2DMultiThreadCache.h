@@ -54,6 +54,9 @@ public:
 		if(prepareForMultithreading)
 			mut = std::vector<MutexWithoutFalseSharing>(sizeX*sizeY);
 		// initialize buffers
+		valueBuffer.reserve(sizeX*sizeY);
+		isEditedBuffer.reserve(sizeX*sizeY);
+		keyBuffer.reserve(sizeX*sizeY);
 		for(size_t i=0;i<sizeX;i++)
 		{
 			for(size_t j=0;j<sizeY;j++)

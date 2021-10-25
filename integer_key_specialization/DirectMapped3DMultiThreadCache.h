@@ -50,9 +50,12 @@ public:
 				const std::function<void(CacheKey,CacheKey,CacheKey,CacheValue)> & writeMiss,
 				const bool prepareForMultithreading = true):sizeX(numElementsX),sizeY(numElementsY),sizeZ(numElementsZ),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),sizeZM1(numElementsZ-1),loadData(readMiss),saveData(writeMiss)
 	{
-		if(prepareForMultiThreading)
+		if(prepareForMultithreading)
 			mut = std::vector<MutexWithoutFalseSharing>(numElementsX*numElementsY*numElementsZ);
 		// initialize buffers
+		valueBuffer.reserve(numElementsX*numElementsY*numElementsZ);
+		isEditedBuffer.reserve(numElementsX*numElementsY*numElementsZ);
+		keyBuffer.reserve(numElementsX*numElementsY*numElementsZ);
 		for(size_t i=0;i<numElementsX;i++)
 		{
 			for(size_t j=0;j<numElementsY;j++)
