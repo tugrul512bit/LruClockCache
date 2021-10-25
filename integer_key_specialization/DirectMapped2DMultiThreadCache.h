@@ -40,11 +40,16 @@ public:
 	//				takes a CacheKey as key and CacheValue as value
 	// numElementsX: has to be integer-power of 2 (e.g. 2,4,8,16,...)
 	// numElementsY: has to be integer-power of 2 (e.g. 2,4,8,16,...)
+	// prepareForMultithreading: by default (true) it allocates an array of structs each with its own mutex to evade false-sharing during getThreadSafe/setThreadSafe calls
+	//          with a given "false" value, it does not allocate mutex array and getThreadSafe/setThreadSafe methods become undefined behavior under multithreaded-use
+	//          true: allocates at least extra 64 bytes per cache tag
 	DirectMapped2DMultiThreadCache(CacheKey numElementsX,CacheKey numElementsY,
 				const std::function<CacheValue(CacheKey,CacheKey)> & readMiss,
-				const std::function<void(CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(numElementsX),sizeY(numElementsY),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),loadData(readMiss),saveData(writeMiss)
+				const std::function<void(CacheKey,CacheKey,CacheValue)> & writeMiss,
+				const bool prepareForMultithreading = true):sizeX(numElementsX),sizeY(numElementsY),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),loadData(readMiss),saveData(writeMiss)
 	{
-		mut = std::vector<std::mutex>(numElementsX*numElementsY);
+		if(prepareForMultithreading)
+			mut = std::vector<MutexWithoutFalseSharing>(numElementsX*numElementsY);
 		// initialize buffers
 		for(size_t i=0;i<numElementsX;i++)
 		{
@@ -63,7 +68,7 @@ public:
 
 
 
-	// get element from cache
+	// get element from cache, row-major like C++ 2D arrays
 	// if cache doesn't find it in buffers,
 	// then cache gets data from backing-store
 	// then returns the result to user
@@ -82,7 +87,7 @@ public:
 		return accessDirectLocked(keyX,keyY,nullptr);
 	}
 
-	// set element to cache
+	// set element to cache, row-major like C++ 2D arrays
 	// if cache doesn't find it in buffers,
 	// then cache sets data on just cache
 	// writing to backing-store only happens when
@@ -132,7 +137,7 @@ public:
 		CacheKey tagX = keyX & sizeXM1;
 		CacheKey tagY = keyY & sizeYM1;
 		const size_t index = tagX*(size_t)sizeY+tagY;
-		std::lock_guard<std::mutex> lg(mut[index]); // N parallel locks in-flight = less contention in multi-threading
+		std::lock_guard<std::mutex> lg(mut[index].mut); // N parallel locks in-flight = less contention in multi-threading
 
 		// compare keys
 		const auto oldKey2D = keyBuffer[index];
@@ -303,12 +308,17 @@ private:
 		CacheKey2D(CacheKey xPrm, CacheKey yPrm):x(xPrm),y(yPrm) { }
 		CacheKey x,y;
 	};
+	struct MutexWithoutFalseSharing
+	{
+		std::mutex mut;
+		char padding[64-sizeof(std::mutex) <= 0 ? 4:64-sizeof(std::mutex)];
+	};
 	const CacheKey sizeX;
 	const CacheKey sizeY;
 	const CacheKey sizeXM1;
 	const CacheKey sizeYM1;
 
-	std::vector<std::mutex> mut;
+	std::vector<MutexWithoutFalseSharing> mut;
 	std::vector<CacheValue> valueBuffer;
 	std::vector<unsigned char> isEditedBuffer;
 	std::vector<CacheKey2D> keyBuffer;

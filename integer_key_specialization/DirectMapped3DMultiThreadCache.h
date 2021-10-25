@@ -41,11 +41,17 @@ public:
 	//				takes a CacheKey as key and CacheValue as value
 	// numElementsX: has to be integer-power of 2 (e.g. 2,4,8,16,...)
 	// numElementsY: has to be integer-power of 2 (e.g. 2,4,8,16,...)
+	// numElementsZ: has to be integer-power of 2 (e.g. 2,4,8,16,...)
+	// prepareForMultithreading: by default (true) it allocates an array of structs each with its own mutex to evade false-sharing during getThreadSafe/setThreadSafe calls
+	//          with a given "false" value, it does not allocate mutex array and getThreadSafe/setThreadSafe methods become undefined behavior under multithreaded-use
+	//          true: allocates at least extra 64 bytes per cache tag
 	DirectMapped3DMultiThreadCache(CacheKey numElementsX,CacheKey numElementsY,CacheKey numElementsZ,
 				const std::function<CacheValue(CacheKey,CacheKey,CacheKey)> & readMiss,
-				const std::function<void(CacheKey,CacheKey,CacheKey,CacheValue)> & writeMiss):sizeX(numElementsX),sizeY(numElementsY),sizeZ(numElementsZ),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),sizeZM1(numElementsZ-1),loadData(readMiss),saveData(writeMiss)
+				const std::function<void(CacheKey,CacheKey,CacheKey,CacheValue)> & writeMiss,
+				const bool prepareForMultithreading = true):sizeX(numElementsX),sizeY(numElementsY),sizeZ(numElementsZ),sizeXM1(numElementsX-1),sizeYM1(numElementsY-1),sizeZM1(numElementsZ-1),loadData(readMiss),saveData(writeMiss)
 	{
-		mut = std::vector<MutexWithoutFalseSharing>(numElementsX*numElementsY*numElementsZ);
+		if(prepareForMultiThreading)
+			mut = std::vector<MutexWithoutFalseSharing>(numElementsX*numElementsY*numElementsZ);
 		// initialize buffers
 		for(size_t i=0;i<numElementsX;i++)
 		{
