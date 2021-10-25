@@ -73,7 +73,7 @@ public:
 
 
 
-	// get element from cache
+	// get element from cache, Z-major indexing like 3D arrays of C++
 	// if cache doesn't find it in buffers,
 	// then cache gets data from backing-store
 	// then returns the result to user
@@ -92,7 +92,7 @@ public:
 		return accessDirectLocked(keyX,keyY,keyZ,nullptr);
 	}
 
-	// set element to cache
+	// set element to cache, Z-major indexing like 3D arrays of C++
 	// if cache doesn't find it in buffers,
 	// then cache sets data on just cache
 	// writing to backing-store only happens when
