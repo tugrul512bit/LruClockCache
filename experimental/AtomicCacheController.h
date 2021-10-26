@@ -8,8 +8,10 @@
 #ifndef ATOMICCACHECONTROLLER_H_
 #define ATOMICCACHECONTROLLER_H_
 
-#include"LruClockCache.h"
+#include"../integer_key_specialization/DirectMappedCache.h"
+#include"../LruClockCache.h"
 #include"CachePipe.h"
+
 #include<thread>
 #include<functional>
 static int pipeId;
