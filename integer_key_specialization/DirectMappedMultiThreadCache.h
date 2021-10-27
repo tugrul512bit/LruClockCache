@@ -38,11 +38,16 @@ public:
 	//				example: [&](MyClass key, MyAnotherClass value){ redis.set(key,value); }
 	//				takes a CacheKey as key and CacheValue as value
 	// numElements: has to be integer-power of 2 (e.g. 2,4,8,16,...)
+	// prepareForMultithreading: by default (true) it allocates an array of structs each with its own mutex to evade false-sharing during getThreadSafe/setThreadSafe calls
+	//          with a given "false" value, it does not allocate mutex array and getThreadSafe/setThreadSafe methods become undefined behavior under multithreaded-use
+	//          true: allocates at least extra 64 bytes per cache tag
 	DirectMappedMultiThreadCache(CacheKey numElements,
 				const std::function<CacheValue(CacheKey)> & readMiss,
-				const std::function<void(CacheKey,CacheValue)> & writeMiss):size(numElements),sizeM1(numElements-1),loadData(readMiss),saveData(writeMiss)
+				const std::function<void(CacheKey,CacheValue)> & writeMiss,
+				const bool prepareForMultithreading = true):size(numElements),sizeM1(numElements-1),loadData(readMiss),saveData(writeMiss)
 	{
-		mut = std::vector<std::mutex>(numElements);
+		if(prepareForMultithreading)
+			mut = std::vector<MutexWithoutFalseSharing>(numElements);
 		// initialize buffers
 		for(size_t i=0;i<numElements;i++)
 		{
@@ -113,16 +118,34 @@ public:
 	{
 		try
 		{
-		for (size_t i=0;i<size;i++)
-		{
-		  if (isEditedBuffer[i] == 1)
-		  {
-				isEditedBuffer[i]=0;
-				auto oldKey = keyBuffer[i];
-				auto oldValue = valueBuffer[i];
-				saveData(oldKey,oldValue);
-		  }
-		}
+			if(mut.size()>0)
+			{
+				for (size_t i=0;i<size;i++)
+				{
+					std::lock_guard<std::mutex> lg(mut[i].mut);
+					if (isEditedBuffer[i] == 1)
+					{
+						isEditedBuffer[i]=0;
+						auto oldKey = keyBuffer[i];
+						auto oldValue = valueBuffer[i];
+						saveData(oldKey,oldValue);
+					}
+				}
+			}
+			else
+			{
+				for (size_t i=0;i<size;i++)
+				{
+					if (isEditedBuffer[i] == 1)
+					{
+						isEditedBuffer[i]=0;
+						auto oldKey = keyBuffer[i];
+						auto oldValue = valueBuffer[i];
+						saveData(oldKey,oldValue);
+					}
+				}
+			}
+
 		}catch(std::exception &ex){ std::cout<<ex.what()<<std::endl; }
 	}
 
@@ -134,7 +157,7 @@ public:
 
 		// find tag mapped to the key
 		CacheKey tag = key & sizeM1;
-		std::lock_guard<std::mutex> lg(mut[tag]); // N parallel locks in-flight = less contention in multi-threading
+		std::lock_guard<std::mutex> lg(mut[tag].mut); // N parallel locks in-flight = less contention in multi-threading
 
 		// compare keys
 		if(keyBuffer[tag] == key)
@@ -293,9 +316,14 @@ public:
 
 
 private:
+	struct MutexWithoutFalseSharing
+	{
+		std::mutex mut;
+		char padding[64-sizeof(std::mutex) <= 0 ? 4:64-sizeof(std::mutex)];
+	};
 	const CacheKey size;
 	const CacheKey sizeM1;
-	std::vector<std::mutex> mut;
+	std::vector<MutexWithoutFalseSharing> mut;
 
 	std::vector<CacheValue> valueBuffer;
 	std::vector<unsigned char> isEditedBuffer;

@@ -122,15 +122,32 @@ public:
 		try
 		{
 			const size_t n = sizeX*sizeY*sizeZ;
-			for (size_t i=0;i<n;i++)
+			if(mut.size()>0)
 			{
-			  if (isEditedBuffer[i] == 1)
-			  {
-					isEditedBuffer[i]=0;
-					auto oldKey = keyBuffer[i];
-					auto oldValue = valueBuffer[i];
-					saveData(oldKey.x,oldKey.y,oldKey.z,oldValue);
-			  }
+				for (size_t i=0;i<n;i++)
+				{
+					std::lock_guard<std::mutex> lg(mut[i].mut);
+					if (isEditedBuffer[i] == 1)
+					{
+						isEditedBuffer[i]=0;
+						auto oldKey = keyBuffer[i];
+						auto oldValue = valueBuffer[i];
+						saveData(oldKey.x,oldKey.y,oldKey.z,oldValue);
+					}
+				}
+			}
+			else
+			{
+				for (size_t i=0;i<n;i++)
+				{
+					if (isEditedBuffer[i] == 1)
+					{
+						isEditedBuffer[i]=0;
+						auto oldKey = keyBuffer[i];
+						auto oldValue = valueBuffer[i];
+						saveData(oldKey.x,oldKey.y,oldKey.z,oldValue);
+					}
+				}
 			}
 		}catch(std::exception &ex){ std::cout<<ex.what()<<std::endl; }
 	}

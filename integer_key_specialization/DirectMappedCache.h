@@ -109,16 +109,17 @@ public:
 	{
 		try
 		{
-		for (size_t i=0;i<size;i++)
-		{
-		  if (isEditedBuffer[i] == 1)
-		  {
-				isEditedBuffer[i]=0;
-				auto oldKey = keyBuffer[i];
-				auto oldValue = valueBuffer[i];
-				saveData(oldKey,oldValue);
-		  }
-		}
+			std::lock_guard<std::mutex> lg(mut);
+			for (size_t i=0;i<size;i++)
+			{
+				if (isEditedBuffer[i] == 1)
+				{
+					isEditedBuffer[i]=0;
+					auto oldKey = keyBuffer[i];
+					auto oldValue = valueBuffer[i];
+					saveData(oldKey,oldValue);
+				}
+			}
 		}catch(std::exception &ex){ std::cout<<ex.what()<<std::endl; }
 	}
 
