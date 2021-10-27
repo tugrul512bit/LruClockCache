@@ -118,6 +118,7 @@ public:
 	// use this before closing the backing-store to store the latest bits of data
 	void flush()
 	{
+		std::lock_guard<std::mutex> lg(mut);
 		for (auto mp = mapping.cbegin(); mp != mapping.cend() /* not hoisted */; /* no increment */)
 		{
 		  if (isEditedBuffer[mp->second] == 1)
