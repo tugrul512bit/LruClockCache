@@ -25,6 +25,19 @@ int main()
   auto val=cache.get(700); // from database
   auto fastVal=cache.get(700); // from cache
   cache.flush(); // all written data in database now
+
+  // Coherent test
+  #pragma omp parallel for
+  for(int i=0;i<100;i++)
+     cache.setThreadSafe(i,std::to_string(i));
+
+  // "55", threadafe
+  auto val=cache.getThreadSafe(55);
+
+  // all dirty bits go to database
+  cache.flush();
+
+  
   return 0;
 }
 
