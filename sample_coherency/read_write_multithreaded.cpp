@@ -1,10 +1,34 @@
 #include "../integer_key_specialization/DirectMappedMultiThreadCache.h"
 #include "../integer_key_specialization/NWaySetAssociatedMultiThreadCache.h"
+#include "MultiLevelCache.h"
 #include <vector>
 #include <omp.h>
 #include <iostream>
 
-int main(int argC, char ** argV)
+int main()
+{
+  // simulating something slower than RAM-access or something that doesn't fit RAM
+  std::vector<std::string> database(1000);
+
+  int L1tags=512;// power of 2
+  int L2sets=128;// power of 2
+  int L2tagsPerSet=1000;
+  MultiLevelCache<int,std::string> cache(L1tags,L2sets,L2tagsPerSet,
+    // read-miss
+    [&](int key){ return database[key];},
+
+    // write-miss
+    [&](int key, std::string value){ database[key]=value;}
+  );
+  cache.set(500,"hello world"); // cached
+  std::cout<<cache.get(500); // from cache
+  auto val=cache.get(700); // from database
+  auto fastVal=cache.get(700); // from cache
+  cache.flush(); // all written data in database now
+  return 0;
+}
+
+int main2(int argC, char ** argV)
 {
         // ok to access different indices multithreaded
 	std::vector<int> backingStore(100000);
@@ -29,7 +53,7 @@ int main(int argC, char ** argV)
 }
 
 
-int main2()
+int main3()
 {
 	SomeBackingStoreThatAllowsMultithreadedAccessToDifferentKeys backingStore;
 	// has better hit-ratio than direct-mapped cache, still coherent, multithreaded
