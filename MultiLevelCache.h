@@ -21,7 +21,7 @@ public:
 	// by default, 64k L1 tags + 256k L2 tags
 	MultiLevelCache(const std::function<CacheValue(CacheKey)> & readCacheMiss, const std::function<void(CacheKey,CacheValue)> & writeCacheMiss):
 		L2(256,1024, readCacheMiss, writeCacheMiss),
-		L1(1024*64,[this](CacheKey key){ return this->L2.get(key); },[this](CacheKey key, CacheValue value){ this->L2.set(key,value); })
+		L1(1024*64,[this](CacheKey key){ return this->L2.getThreadSafe(key); },[this](CacheKey key, CacheValue value){ this->L2.setThreadSafe(key,value); })
 	{
 
 	}
@@ -32,7 +32,7 @@ public:
 	// L2size = L2sets * L2tagsPerSet
 	MultiLevelCache(size_t L1size, size_t L2sets, size_t L2tagsPerSet,const std::function<CacheValue(CacheKey)> & readCacheMiss, const std::function<void(CacheKey,CacheValue)> & writeCacheMiss):
 		L2(L2sets,L2tagsPerSet, readCacheMiss, writeCacheMiss),
-		L1(L1size,[this](CacheKey key){ return this->L2.get(key); },[this](CacheKey key, CacheValue value){ this->L2.set(key,value); })
+		L1(L1size,[this](CacheKey key){ return this->L2.getThreadSafe(key); },[this](CacheKey key, CacheValue value){ this->L2.setThreadSafe(key,value); })
 	{
 
 	}
