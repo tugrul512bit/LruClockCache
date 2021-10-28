@@ -2,7 +2,8 @@
  * AsyncCache.h
  *
  *  Created on: Oct 28, 2021
- *      Author: root
+ *      Author: tugrul
+ *      Idea of vector-swapping for producer-consumer communication: Joe Zbiciak
  */
 
 #ifndef ASYNCCACHE_H_
