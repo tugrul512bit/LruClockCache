@@ -75,8 +75,30 @@ Cache-hit-ratio (read): <b>78% (100%)</b>
 Timings (50 million pixel lookups per second = 20 nanosecond average per access) include all of the computation work: integer division after pixel summations and chrono time measurement latency.
 
 --------
+# Multi Level Cache (read+write coherency + multithreaded = 75 million lookups per second)
 
-# Multi Level Cache
+```CPP
+	int main()
+	{
+		std::vector<int> data(1024*1024); // simulating a backing-store
+    
+		MultiLevelCache<int,int> cache(
+        64*1024 /* direct-mapped L1 cache elements */,
+        256,1024 /* n-way set-associative (LRU approximation) L2 cache elements */,
+        [&](int key){ return data[key]; } /* cache-miss function to get data from backingstore into cache */,
+        [&](int key, int value){ data[key]=value; } /* cache-miss function to set data on backging-store during eviction */
+    );
+		cache.set(5,10); // this is single-thread example, sets value 10 at key position of 5
+		cache.flush(); // writes all latest bits of data to backing-store
+		std::cout<<data[5]<<std::endl;
+    auto val = cache.getThreadSafe(5); // this is thread-safe from any number of threads
+    cache.setThreadSafe(10,val); //    thread-safe, any number of threads
+		return 0;
+	}
+```
+--------
+
+# Multi Level Cache (read-only + multithreaded = 2.5 billion lookups per second)
 
 If keys are integer type (char, int, size_t), then a L1 direct-mapped cache can be added in front of an L2 LRU cache to act as a single-thread front of an LLC cache given by user (which implements thread-safe set/get operations). Currently it supports only single-thread L1+L2+LLC:
 
