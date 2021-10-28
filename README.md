@@ -78,23 +78,47 @@ Timings (50 million pixel lookups per second = 20 nanosecond average per access)
 # Multi Level Cache (read+write coherency + multithreaded = 75 million lookups per second)
 
 ```CPP
-	int main()
-	{
-		std::vector<int> data(1024*1024); // simulating a backing-store
+int main()
+{
+	std::vector<int> data(1024*1024); // simulating a backing-store
     
-		MultiLevelCache<int,int> cache(
-        64*1024 /* direct-mapped L1 cache elements */,
-        256,1024 /* n-way set-associative (LRU approximation) L2 cache elements */,
-        [&](int key){ return data[key]; } /* cache-miss function to get data from backingstore into cache */,
-        [&](int key, int value){ data[key]=value; } /* cache-miss function to set data on backging-store during eviction */
-    );
-		cache.set(5,10); // this is single-thread example, sets value 10 at key position of 5
-		cache.flush(); // writes all latest bits of data to backing-store
-		std::cout<<data[5]<<std::endl;
-    auto val = cache.getThreadSafe(5); // this is thread-safe from any number of threads
-    cache.setThreadSafe(10,val); //    thread-safe, any number of threads
-		return 0;
-	}
+	MultiLevelCache<int,int> cache(
+		64*1024 /* direct-mapped L1 cache elements */,
+		256,1024 /* n-way set-associative (LRU approximation) L2 cache elements */,
+		[&](int key){ return data[key]; } /* cache-miss function to get data from backingstore into cache */,
+		[&](int key, int value){ data[key]=value; } /* cache-miss function to set data on backging-store during eviction */
+	);
+	cache.set(5,10); // this is single-thread example, sets value 10 at key position of 5
+	cache.flush(); // writes all latest bits of data to backing-store
+	std::cout<<data[5]<<std::endl;
+	auto val = cache.getThreadSafe(5); // this is thread-safe from any number of threads
+	cache.setThreadSafe(10,val); //    thread-safe, any number of threads
+	return 0;
+}
+```
+--------
+# Async Multi Level Cache (read+write weak-coherency(threads are responsible to use barrier) + multithread = up to 75 million lookups per second)
+
+```CPP
+int main()
+{
+	std::vector<int> data(1000000); // backing-store simulation
+	
+	// L1 cache = direct mapped 128 elements
+	// L2 cache = n-way set associative 128*1024 elements
+	// similar cache-miss functions with MultiLevelCache
+	AsyncCache<int,int> cache(128,128,1024,[&](int key){ return data[key]; },[&](int key, int value){ data[key]=value; });
+	
+	int val;
+	int slot = cache.setAsync(5,100); // immediately returns, cache runs asynchronously to serve in a dedicated thread
+	cache.getAsync(5,&val,slot);	// immediately returns
+	std::cout<<data[5]<<" "<<val<<std::endl;
+	cache.barrier(slot); // waits for completion of operations issued into slot
+	std::cout<<data[5]<<" "<<val<<std::endl;
+	cache.flush(); // writes all dirty data to backing-store and waits for completion
+	std::cout<<data[5]<<" "<<val<<std::endl;
+	return 0;
+}
 ```
 --------
 
