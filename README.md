@@ -110,12 +110,23 @@ int main()
 	AsyncCache<int,int> cache(128,128,1024,[&](int key){ return data[key]; },[&](int key, int value){ data[key]=value; });
 	
 	int val;
-	int slot = cache.setAsync(5,100); // immediately returns, cache runs asynchronously to serve in a dedicated thread
-	cache.getAsync(5,&val,slot);	// immediately returns
+	
+	// immediately returns, cache runs asynchronously to serve in a dedicated thread
+	int slot = cache.setAsync(5,100); 
+	
+	// immediately returns, any slot id can be used but a thread should use its own unique slot id on all operations for maximum performance
+	cache.getAsync(5,&val,slot);	
+	
 	std::cout<<data[5]<<" "<<val<<std::endl;
-	cache.barrier(slot); // waits for completion of operations issued into slot
+	
+	// waits for completion of operations issued into slot
+	cache.barrier(slot); 
+	
 	std::cout<<data[5]<<" "<<val<<std::endl;
-	cache.flush(); // writes all dirty data to backing-store and waits for completion
+	
+	// writes all dirty data to backing-store and waits for completion
+	cache.flush(); 
+	
 	std::cout<<data[5]<<" "<<val<<std::endl;
 	return 0;
 }
