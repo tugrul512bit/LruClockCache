@@ -17,10 +17,21 @@
 #include<memory>
 static int threadSlotId=0;
 
+// another multi-level cache for integer keys but asynchronous to the caller of get/set
+// optimized for batch-lookup and thread-safe
 template<typename CacheKey, typename CacheValue>
 class AsyncCache
 {
 public:
+	// composed of 2 caches,
+	//		L1=direct mapped cache which is client of L2,
+	//		L2=n-way set-associative LRU approximation which is client of backing-store given inside cache-miss functions
+	//	L1tags = number of item slots in L1 cache = power of 2 value required
+	//	L2sets = number of LRUs in L2 cache = power of 2 value required
+	//	L2tagsPerSet = number of item slots per LRU in n-way set associative
+	//		total L2 items = L2sets x L2tagsperset
+	//	readCacheMiss = function that is called by cache when a key is not found in cache, to read data from backing-store
+	//	writeCacheMiss = function that is called by cache when data is cache is evicted, to write on backing-store
 	AsyncCache(const size_t L1tags, const size_t L2sets, const size_t L2tagsPerSet,
 			const std::function<CacheValue(CacheKey)> & readCacheMiss,
 			const std::function<void(CacheKey,CacheValue)> & writeCacheMiss,
