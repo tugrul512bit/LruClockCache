@@ -15,6 +15,8 @@
 #include <mutex>
 #include<thread>
 #include<memory>
+#include<condition_variable>
+#include <chrono>
 static int threadSlotId=0;
 
 // another multi-level cache for integer keys but asynchronous to the caller of get/set
@@ -57,13 +59,16 @@ public:
 		consumer=std::thread([&](){
 
 			bool work = true;
+			unsigned int workToDo = 0;
+			unsigned int idleCycle = 0;
 			while(work)
 			{
 
+				workToDo = 0;
 				for(int i=0;i<numProducers;i++)
 				{
-					std::lock_guard<std::mutex> lg(locks[i].mut);
-					std::swap(cmdQueueForConsumerPtr[i],cmdQueuePtr[i]);
+						std::lock_guard<std::mutex> lg(locks[i].mut);
+						std::swap(cmdQueueForConsumerPtr[i],cmdQueuePtr[i]);
 				}
 
 				for(int i=0;i<numProducers;i++)
@@ -71,7 +76,7 @@ public:
 					std::vector<Command> * const queue = cmdQueueForConsumerPtr[i];
 					const std::vector<Command> & queueRef =  *queue;
 					const int numWork = queue->size();
-
+					workToDo += numWork;
 					for(int j=0;j<numWork;j++)
 					{
 						switch(queueRef[j].cmd)
@@ -99,11 +104,22 @@ public:
 					if(numWork>0)
 						queue->clear(); // no deallocation
 
+
 					if(!work || numWork==0)
 					{
 						std::lock_guard<std::mutex> lg(locks[i].mut);
 						barriers[i]=true;
 
+					}
+				}
+
+				if(workToDo == 0)
+				{
+					idleCycle++;
+					if(idleCycle>=100)
+					{
+						idleCycle=0;
+						std::this_thread::sleep_for(std::chrono::milliseconds(1));
 					}
 				}
 			}
@@ -119,7 +135,7 @@ public:
 		const int slot = (slotOptional==-1 ? slotStatic : slotOptional);
 		const int slotMod = slot&numProducersM1;
 		std::lock_guard<std::mutex> lg(locks[slotMod].mut);
-		cmdQueuePtr[slotMod]->push_back(Command(key,valPtr,CacheValue(),0)); // no reallocation after some time
+		cmdQueuePtr[slotMod]->emplace_back(Command(key,valPtr,CacheValue(),0)); // no reallocation after some time
 		return slot;
 	}
 
@@ -130,7 +146,7 @@ public:
 		const int slot = (slotOptional==-1 ? slotStatic : slotOptional);
 		const int slotMod = slot&numProducersM1;
 		std::lock_guard<std::mutex> lg(locks[slotMod].mut);
-		cmdQueuePtr[slotMod]->push_back(Command(key,nullptr,val,1));
+		cmdQueuePtr[slotMod]->emplace_back(Command(key,nullptr,val,1));
 		return slot;
 	}
 
@@ -208,10 +224,10 @@ private:
 	};
 	struct Command
 	{
-		CacheKey key;
-		CacheValue value;
-		CacheValue * valuePtr;
-		char cmd; // 0=get, 1=set, 2=flush, 3=terminate
+		const CacheKey key;
+		const CacheValue value;
+		CacheValue * const valuePtr;
+		const char cmd; // 0=get, 1=set, 2=flush, 3=terminate
 
 		Command():key(),value(),valuePtr(nullptr),cmd(-1){ }
 		Command(char cmdPrm):key(),value(),valuePtr(nullptr),cmd(cmdPrm){}
@@ -230,6 +246,7 @@ private:
 	std::vector<std::vector<Command> *> cmdQueueForConsumerPtr;
 	std::thread consumer;
 	std::vector<bool> barriers;
+	//std::condition_variable signal;
 };
 
 
