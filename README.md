@@ -135,7 +135,7 @@ int main()
 
 # Multi Level Cache (read-only + multithreaded = 2.5 billion lookups per second)
 
-If keys are integer type (char, int, size_t), then a L1 direct-mapped cache can be added in front of an L2 LRU cache to act as a single-thread front of an LLC cache given by user (which implements thread-safe set/get operations). Currently it supports only single-thread L1+L2+LLC:
+If keys are integer type (char, int, size_t), then a L1 direct-mapped cache can be added in front of an L2 LRU cache to act as a single-thread front of an LLC cache given by user (which implements thread-safe set/get operations). Currently it supports read-only multi-thread or read+write single thread:
 
 ```CPP
 // simulating a backing-store
