@@ -42,19 +42,51 @@ public:
 		locks(numProducersPrm),
 		L2(L2sets,L2tagsPerSet,readCacheMiss,writeCacheMiss),
 		L1(L1tags,[this](CacheKey key){ return this->L2.get(key); },[this](CacheKey key, CacheValue value){ this->L2.set(key,value); }),
-		cmdQueue(numProducersPrm),
-		cmdQueueForConsumer(numProducersPrm),
-		cmdQueuePtr(numProducersPrm),
-		cmdQueueForConsumerPtr(numProducersPrm),
+
+		cmdQueueGet(numProducersPrm),
+		cmdQueueForConsumerGet(numProducersPrm),
+		cmdQueuePtrGet(numProducersPrm),
+		cmdQueueForConsumerPtrGet(numProducersPrm),
+
+		cmdQueueSet(numProducersPrm),
+		cmdQueueForConsumerSet(numProducersPrm),
+		cmdQueuePtrSet(numProducersPrm),
+		cmdQueueForConsumerPtrSet(numProducersPrm),
+
+		cmdQueueFlush(numProducersPrm),
+		cmdQueueForConsumerFlush(numProducersPrm),
+		cmdQueuePtrFlush(numProducersPrm),
+		cmdQueueForConsumerPtrFlush(numProducersPrm),
+
+		cmdQueueTerminate(numProducersPrm),
+		cmdQueueForConsumerTerminate(numProducersPrm),
+		cmdQueuePtrTerminate(numProducersPrm),
+		cmdQueueForConsumerPtrTerminate(numProducersPrm),
+
 		barriers(numProducersPrm)
 	{
 		for(int i=0;i<numProducers;i++)
 		{
 			barriers[i]=true;
-			cmdQueue[i]=std::make_unique<std::vector<Command>>();
-			cmdQueueForConsumer[i]=std::make_unique<std::vector<Command>>();
-			cmdQueuePtr[i]=cmdQueue[i].get();
-			cmdQueueForConsumerPtr[i]=cmdQueueForConsumer[i].get();
+			cmdQueueGet[i]=std::make_unique<std::vector<Command>>();
+			cmdQueueForConsumerGet[i]=std::make_unique<std::vector<Command>>();
+			cmdQueuePtrGet[i]=cmdQueueGet[i].get();
+			cmdQueueForConsumerPtrGet[i]=cmdQueueForConsumerGet[i].get();
+
+			cmdQueueSet[i]=std::make_unique<std::vector<Command>>();
+			cmdQueueForConsumerSet[i]=std::make_unique<std::vector<Command>>();
+			cmdQueuePtrSet[i]=cmdQueueSet[i].get();
+			cmdQueueForConsumerPtrSet[i]=cmdQueueForConsumerSet[i].get();
+
+			cmdQueueFlush[i]=std::make_unique<std::vector<Command>>();
+			cmdQueueForConsumerFlush[i]=std::make_unique<std::vector<Command>>();
+			cmdQueuePtrFlush[i]=cmdQueueFlush[i].get();
+			cmdQueueForConsumerPtrFlush[i]=cmdQueueForConsumerFlush[i].get();
+
+			cmdQueueTerminate[i]=std::make_unique<std::vector<Command>>();
+			cmdQueueForConsumerTerminate[i]=std::make_unique<std::vector<Command>>();
+			cmdQueuePtrTerminate[i]=cmdQueueTerminate[i].get();
+			cmdQueueForConsumerPtrTerminate[i]=cmdQueueForConsumerTerminate[i].get();
 		}
 		consumer=std::thread([&](){
 
@@ -68,44 +100,83 @@ public:
 				for(int i=0;i<numProducers;i++)
 				{
 						std::lock_guard<std::mutex> lg(locks[i].mut);
-						std::swap(cmdQueueForConsumerPtr[i],cmdQueuePtr[i]);
+						std::swap(cmdQueueForConsumerPtrGet[i],cmdQueuePtrGet[i]);
+						std::swap(cmdQueueForConsumerPtrSet[i],cmdQueuePtrSet[i]);
+						std::swap(cmdQueueForConsumerPtrFlush[i],cmdQueuePtrFlush[i]);
+						std::swap(cmdQueueForConsumerPtrTerminate[i],cmdQueuePtrTerminate[i]);
 				}
 
 				for(int i=0;i<numProducers;i++)
 				{
-					std::vector<Command> * const queue = cmdQueueForConsumerPtr[i];
-					const std::vector<Command> & queueRef =  *queue;
-					const int numWork = queue->size();
-					workToDo += numWork;
-					for(int j=0;j<numWork;j++)
+					int numWorkGet = 0;
+					int numWorkSet = 0;
+					int numWorkFlush = 0;
+					int numWorkTerminate = 0;
 					{
-						switch(queueRef[j].cmd)
+						std::vector<Command> * const queue = cmdQueueForConsumerPtrGet[i];
+						const std::vector<Command> & queueRef =  *queue;
+						const int numWork = queue->size();
+						numWorkGet = numWork;
+						workToDo += numWork;
+						for(int j=0;j<numWork;j++)
 						{
-							case 0: // get
-								*(queueRef[j].valuePtr) = L1.get(queueRef[j].key);
-								break;
-							case 1: // set
-								L1.set(queueRef[j].key,queueRef[j].value);
-								break;
-							case 2: // flush
-								L1.flush();
-								L2.flush();
-								break;
-							case 3: // terminate
-								L1.flush();
-								L2.flush();
-								work=false;
-								break;
-							default: break;
+							*(queueRef[j].valuePtr) = L1.get(queueRef[j].key);
 						}
 
+						if(numWork>0)
+							queue->clear(); // no deallocation
 					}
 
-					if(numWork>0)
-						queue->clear(); // no deallocation
+					{
+						std::vector<Command> * const queue = cmdQueueForConsumerPtrSet[i];
+						const std::vector<Command> & queueRef =  *queue;
+						const int numWork = queue->size();
+						numWorkSet = numWork;
+						workToDo += numWork;
+						for(int j=0;j<numWork;j++)
+						{
+							L1.set(queueRef[j].key,queueRef[j].value);
+						}
 
+						if(numWork>0)
+							queue->clear(); // no deallocation
+					}
 
-					if(!work || numWork==0)
+					{
+						std::vector<Command> * const queue = cmdQueueForConsumerPtrFlush[i];
+						const std::vector<Command> & queueRef =  *queue;
+						const int numWork = queue->size();
+						numWorkFlush = numWork;
+						workToDo += numWork;
+						for(int j=0;j<numWork;j++)
+						{
+							L1.flush();
+							L2.flush();
+						}
+
+						if(numWork>0)
+							queue->clear(); // no deallocation
+					}
+
+					{
+						std::vector<Command> * const queue = cmdQueueForConsumerPtrTerminate[i];
+						const std::vector<Command> & queueRef =  *queue;
+						const int numWork = queue->size();
+						numWorkTerminate = numWork;
+						workToDo += numWork;
+						for(int j=0;j<numWork;j++)
+						{
+							L1.flush();
+							L2.flush();
+							work=false;
+							break;
+						}
+
+						if(numWork>0)
+							queue->clear(); // no deallocation
+					}
+
+					if(!work || (numWorkGet==0 && numWorkSet==0 && numWorkFlush==0 && numWorkTerminate==0))
 					{
 						std::lock_guard<std::mutex> lg(locks[i].mut);
 						barriers[i]=true;
@@ -135,7 +206,7 @@ public:
 		const int slot = (slotOptional==-1 ? slotStatic : slotOptional);
 		const int slotMod = slot&numProducersM1;
 		std::lock_guard<std::mutex> lg(locks[slotMod].mut);
-		cmdQueuePtr[slotMod]->emplace_back(Command(key,valPtr,CacheValue(),0)); // no reallocation after some time
+		cmdQueuePtrGet[slotMod]->emplace_back(Command(key,valPtr,CacheValue(),0)); // no reallocation after some time
 		return slot;
 	}
 
@@ -146,7 +217,7 @@ public:
 		const int slot = (slotOptional==-1 ? slotStatic : slotOptional);
 		const int slotMod = slot&numProducersM1;
 		std::lock_guard<std::mutex> lg(locks[slotMod].mut);
-		cmdQueuePtr[slotMod]->emplace_back(Command(key,nullptr,val,1));
+		cmdQueuePtrSet[slotMod]->emplace_back(Command(key,nullptr,val,1));
 		return slot;
 	}
 
@@ -156,7 +227,7 @@ public:
 		for(int i=0;i<numProducers;i++)
 		{
 			std::lock_guard<std::mutex> lg(locks[i].mut);
-			cmdQueuePtr[i]->push_back(Command(2));
+			cmdQueuePtrFlush[i]->push_back(Command(2));
 		}
 		for(int i=0;i<numProducers;i++)
 			barrier(i);
@@ -205,7 +276,7 @@ public:
 
 		{
 			std::lock_guard<std::mutex> lg(locks[0].mut);
-			cmdQueuePtr[0]->push_back(Command(3));
+			cmdQueuePtrTerminate[0]->push_back(Command(3));
 		}
 
 
@@ -240,10 +311,27 @@ private:
 	std::vector<MutexWithoutFalseSharing> locks;
 	NWaySetAssociativeMultiThreadCache<CacheKey,CacheValue> L2;
 	DirectMappedMultiThreadCache<CacheKey,CacheValue> L1;
-	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueue;
-	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueForConsumer;
-	std::vector<std::vector<Command> *> cmdQueuePtr;
-	std::vector<std::vector<Command> *> cmdQueueForConsumerPtr;
+
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueGet;
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueForConsumerGet;
+	std::vector<std::vector<Command> *> cmdQueuePtrGet;
+	std::vector<std::vector<Command> *> cmdQueueForConsumerPtrGet;
+
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueSet;
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueForConsumerSet;
+	std::vector<std::vector<Command> *> cmdQueuePtrSet;
+	std::vector<std::vector<Command> *> cmdQueueForConsumerPtrSet;
+
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueFlush;
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueForConsumerFlush;
+	std::vector<std::vector<Command> *> cmdQueuePtrFlush;
+	std::vector<std::vector<Command> *> cmdQueueForConsumerPtrFlush;
+
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueTerminate;
+	std::vector<std::unique_ptr<std::vector<Command>>> cmdQueueForConsumerTerminate;
+	std::vector<std::vector<Command> *> cmdQueuePtrTerminate;
+	std::vector<std::vector<Command> *> cmdQueueForConsumerPtrTerminate;
+
 	std::thread consumer;
 	std::vector<bool> barriers;
 	//std::condition_variable signal;
