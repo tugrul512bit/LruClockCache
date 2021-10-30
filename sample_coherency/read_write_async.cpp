@@ -1,4 +1,4 @@
-// outputs 9 nanoseconds per setAsync/getAsync on average as inverse throughput (~110 million lookups per second with single consumer thread, 8 producer threads)
+// outputs 5.5 nanoseconds per setAsync/getAsync on average as inverse throughput (~180 million lookups per second with single consumer thread, 8 producer threads)
 // real latency is about 1000-2000 nanoseconds
 
 int main()
