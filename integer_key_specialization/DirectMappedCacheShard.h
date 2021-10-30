@@ -1,26 +1,28 @@
 /*
- * DirectMappedCache.h
+ * DirectMappedCacheShard.h
  *
- *  Created on: Oct 8, 2021
+ *  Created on: Oct 30, 2021
  *      Author: root
  */
 
-#ifndef DIRECTMAPPEDCACHE_H_
-#define DIRECTMAPPEDCACHE_H_
+#ifndef DIRECTMAPPEDCACHESHARD_H_
+#define DIRECTMAPPEDCACHESHARD_H_
 
 #include<vector>
 #include<functional>
 #include<mutex>
 
 
-/* Direct-mapped cache implementation
+
+/* Shard specialization of Direct-mapped cache implementation
+ * Intended to be used in AsyncCache.h with multiple instances as shards (slower than direct mapped alone)
  * Only usable for integer type keys in range [0,maxPositive-1]
  *
  * CacheKey: type of key (only integers: int, char, size_t)
  * CacheValue: type of value that is bound to key (same as above)
  */
 template<	typename CacheKey, typename CacheValue>
-class DirectMappedCache
+class DirectMappedCacheShard
 {
 public:
 	// allocates buffers for numElements number of cache slots/lanes
@@ -33,13 +35,14 @@ public:
 	//				example: [&](MyClass key, MyAnotherClass value){ redis.set(key,value); }
 	//				takes a CacheKey as key and CacheValue as value
 	// numElements: has to be integer-power of 2 (e.g. 2,4,8,16,...)
-	DirectMappedCache(CacheKey numElements,
+	DirectMappedCacheShard(CacheKey numElements,
 				const std::function<CacheValue(CacheKey)> & readMiss,
 				const std::function<void(CacheKey,CacheValue)> & writeMiss,
-				const int zenithShards=4, /* unused for DirectMappedCache alone */
-				const int zenithLane=0 /* unused for DirectMappedCacheAlone*/
-				):size(numElements),sizeM1(numElements-1),loadData(readMiss),saveData(writeMiss)
+				const int totalShardsPrm, // the size of parent cache in terms of number of shards
+				const int shardLanePrm // the lane of this shard in mapping. 0 = first shard in cache, 1 = second shard, ... totalShardsPrm-1 = last shard
+				):size(numElements),sizeM1(numElements-1),loadData(readMiss),saveData(writeMiss),totalShards(totalShardsPrm),shardLane(shardLanePrm)
 	{
+
 		// initialize buffers
 		for(size_t i=0;i<numElements;i++)
 		{
@@ -133,7 +136,8 @@ public:
 	{
 
 		// find tag mapped to the key
-		CacheKey tag = key & sizeM1;
+
+		CacheKey tag = ((key/totalShards) & sizeM1 );
 
 		// compare keys
 		if(keyBuffer[tag] == key)
@@ -219,8 +223,10 @@ private:
 	std::vector<CacheKey> keyBuffer;
 	const std::function<CacheValue(CacheKey)>  loadData;
 	const std::function<void(CacheKey,CacheValue)>  saveData;
-
+	const int totalShards;
+	const int shardLane;
 };
 
 
-#endif /* DIRECTMAPPEDCACHE_H_ */
+
+#endif /* DIRECTMAPPEDCACHESHARD_H_ */
