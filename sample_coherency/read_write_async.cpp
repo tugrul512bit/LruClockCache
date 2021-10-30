@@ -5,12 +5,27 @@ int main()
 {
  		const int N=400000;
 		std::vector<int> data(N);
-		AsyncCache<int,int> cache(1024*1024*4, // tags of direct mapped cache
-					  1024*1024*8, // tags of LRU (approximation)
-					  [&](int key){ return data[key]; }, // read miss
-					  [&](int key, int value){ data[key]=value; } // write miss
-					  8 // number of slots (producers)
+		AsyncCache<int,int> cache(
+			1024*1024*4, // tags of direct mapped cache
+			1024*1024*8, // tags of LRU (approximation)
+			[&](int key){ return data[key]; }, // read miss
+			[&](int key, int value){ data[key]=value; } // write miss
+			8 // number of slots (producers)
 		);
+	
+		/*
+		methods of this class do not take slot id. each consumer has only 1 slot so remaining codes do not require slot id parameter with this object
+		ZenithCache<int,int> cache(
+			1024*1024, // L1 tags
+			1024*1024, // L2 tags
+			2, // consumer shards
+			[&](int key){ return data[key]; },
+			[&](int key, int value){ data[key]=value; }
+		);
+		
+		
+		
+		*/
 	
 		int d=0;
 		std::cin>>d;
