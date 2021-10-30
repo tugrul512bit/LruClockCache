@@ -9,8 +9,9 @@
 #ifndef ASYNCCACHE_H_
 #define ASYNCCACHE_H_
 
-#include "integer_key_specialization/NWaySetAssociativeMultiThreadCache.h"
-#include "integer_key_specialization/DirectMappedMultiThreadCache.h"
+#include "LruClockCache.h"
+#include "integer_key_specialization/DirectMappedCache.h"
+#include "integer_key_specialization/DirectMappedCacheShard.h"
 #include <vector>
 #include <mutex>
 #include<thread>
@@ -21,27 +22,31 @@ static int threadSlotId=0;
 
 // another multi-level cache for integer keys but asynchronous to the caller of get/set
 // optimized for batch-lookup and thread-safe
-template<typename CacheKey, typename CacheValue>
+template<typename CacheKey, typename CacheValue, typename DirectMappedType=DirectMappedCache<CacheKey,CacheValue>>
 class AsyncCache
 {
 public:
 	// composed of 2 caches,
 	//		L1=direct mapped cache which is client of L2,
-	//		L2=n-way set-associative LRU approximation which is client of backing-store given inside cache-miss functions
+	//		L2=LRU approximation which is client of backing-store given inside cache-miss functions
 	//	L1tags = number of item slots in L1 cache = power of 2 value required
-	//	L2sets = number of LRUs in L2 cache = power of 2 value required
-	//	L2tagsPerSet = number of item slots per LRU in n-way set associative
-	//		total L2 items = L2sets x L2tagsperset
+	//	L2tags = number of item slots in L1 cache
 	//	readCacheMiss = function that is called by cache when a key is not found in cache, to read data from backing-store
 	//	writeCacheMiss = function that is called by cache when data is cache is evicted, to write on backing-store
-	AsyncCache(const size_t L1tags, const size_t L2sets, const size_t L2tagsPerSet,
+	AsyncCache(const size_t L1tags, const size_t L2tags,
 			const std::function<CacheValue(CacheKey)> & readCacheMiss,
 			const std::function<void(CacheKey,CacheValue)> & writeCacheMiss,
-			const int numProducersPrm = 8 /* has to be power of 2 */
+			const int numProducersPrm = 8, /* has to be power of 2 */
+			const int zenithShards=0, /* unused for AsyncCache alone */
+			const int zenithLane=0 /* unused for AsyncCache alone */
 	):	numProducers(numProducersPrm),numProducersM1(numProducersPrm-1),
 		locks(numProducersPrm),
-		L2(L2sets,L2tagsPerSet,readCacheMiss,writeCacheMiss),
-		L1(L1tags,[this](CacheKey key){ return this->L2.get(key); },[this](CacheKey key, CacheValue value){ this->L2.set(key,value); }),
+		L2(L2tags,readCacheMiss,writeCacheMiss),
+		L1(L1tags,
+				[this](CacheKey key){ return this->L2.get(key); },
+				[this](CacheKey key, CacheValue value){ this->L2.set(key,value); },
+				zenithShards,zenithLane
+		),
 
 		cmdQueueGet(numProducersPrm),
 		cmdQueueForConsumerGet(numProducersPrm),
@@ -65,9 +70,10 @@ public:
 
 		barriers(numProducersPrm)
 	{
+
 		for(int i=0;i<numProducers;i++)
 		{
-			barriers[i]=true;
+			barriers[i].bar=true;
 			cmdQueueGet[i]=std::make_unique<std::vector<CommandGet>>();
 			cmdQueueForConsumerGet[i]=std::make_unique<std::vector<CommandGet>>();
 			cmdQueuePtrGet[i]=cmdQueueGet[i].get();
@@ -99,11 +105,13 @@ public:
 				workToDo = 0;
 				for(int i=0;i<numProducers;i++)
 				{
-						std::lock_guard<std::mutex> lg(locks[i].mut);
+						//std::lock_guard<std::mutex> lg(locks[i].mut);
+						locks.lock(i);
 						std::swap(cmdQueueForConsumerPtrGet[i],cmdQueuePtrGet[i]);
 						std::swap(cmdQueueForConsumerPtrSet[i],cmdQueuePtrSet[i]);
 						std::swap(cmdQueueForConsumerPtrFlush[i],cmdQueuePtrFlush[i]);
 						std::swap(cmdQueueForConsumerPtrTerminate[i],cmdQueuePtrTerminate[i]);
+						locks.unlock(i);
 				}
 
 				for(int i=0;i<numProducers;i++)
@@ -178,9 +186,10 @@ public:
 
 					if(!work || (numWorkGet==0 && numWorkSet==0 && numWorkFlush==0 && numWorkTerminate==0))
 					{
-						std::lock_guard<std::mutex> lg(locks[i].mut);
-						barriers[i]=true;
-
+						//std::lock_guard<std::mutex> lg(locks[i].mut);
+						locks.lock(i);
+						barriers[i].bar=true;
+						locks.unlock(i);
 					}
 				}
 
@@ -190,7 +199,10 @@ public:
 					if(idleCycle>=100)
 					{
 						idleCycle=0;
-						std::this_thread::sleep_for(std::chrono::milliseconds(1));
+						if(zenithShards==0)
+							std::this_thread::sleep_for(std::chrono::milliseconds(1));
+						else
+							std::this_thread::yield();
 					}
 				}
 			}
@@ -205,8 +217,10 @@ public:
 		static thread_local int slotStatic = generateThreadSlotId();
 		const int slot = (slotOptional==-1 ? slotStatic : slotOptional);
 		const int slotMod = slot&numProducersM1;
-		std::lock_guard<std::mutex> lg(locks[slotMod].mut);
+		//std::lock_guard<std::mutex> lg(locks[slotMod].mut);
+		locks.lock(slotMod);
 		cmdQueuePtrGet[slotMod]->emplace_back(CommandGet(key,valPtr)); // no reallocation after some time
+		locks.unlock(slotMod);
 		return slot;
 	}
 
@@ -216,8 +230,10 @@ public:
 		static thread_local int slotStatic = generateThreadSlotId();
 		const int slot = (slotOptional==-1 ? slotStatic : slotOptional);
 		const int slotMod = slot&numProducersM1;
-		std::lock_guard<std::mutex> lg(locks[slotMod].mut);
+		//std::lock_guard<std::mutex> lg(locks[slotMod].mut);
+		locks.lock(slotMod);
 		cmdQueuePtrSet[slotMod]->emplace_back(CommandSet(key,val));
+		locks.unlock(slotMod);
 		return slot;
 	}
 
@@ -226,8 +242,10 @@ public:
 	{
 		for(int i=0;i<numProducers;i++)
 		{
-			std::lock_guard<std::mutex> lg(locks[i].mut);
+			//std::lock_guard<std::mutex> lg(locks[i].mut);
+			locks.lock(i);
 			cmdQueuePtrFlush[i]->push_back(CommandFlush());
+			locks.unlock(i);
 		}
 		for(int i=0;i<numProducers;i++)
 			barrier(i);
@@ -241,15 +259,19 @@ public:
 			for(int i=0;i<numProducers;i++)
 			{
 				{
-					std::lock_guard<std::mutex> lg(locks[i].mut);
-					barriers[i]=false;
+					//std::lock_guard<std::mutex> lg(locks[i].mut);
+					locks.lock(i);
+					barriers[i].bar=false;
+					locks.unlock(i);
 				}
 				bool wait = true;
 				while(wait)
 				{
 					std::this_thread::yield();
-					std::lock_guard<std::mutex> lg(locks[i].mut);
-					wait = !barriers[i];
+					//std::lock_guard<std::mutex> lg(locks[i].mut);
+					locks.lock(i);
+					wait = !barriers[i].bar;
+					locks.unlock(i);
 				}
 			}
 		}
@@ -257,15 +279,19 @@ public:
 		{
 			const int slotMod = slot&numProducersM1;
 			{
-				std::lock_guard<std::mutex> lg(locks[slotMod].mut);
-				barriers[slotMod]=false;
+				//std::lock_guard<std::mutex> lg(locks[slotMod].mut);
+				locks.lock(slotMod);
+				barriers[slotMod].bar=false;
+				locks.unlock(slotMod);
 			}
 			bool wait = true;
 			while(wait)
 			{
 				std::this_thread::yield();
-				std::lock_guard<std::mutex> lg(locks[slotMod].mut);
-				wait = !barriers[slotMod];
+				//std::lock_guard<std::mutex> lg(locks[slotMod].mut);
+				locks.lock(slotMod);
+				wait = !barriers[slotMod].bar;
+				locks.unlock(slotMod);
 			}
 		}
 	}
@@ -275,8 +301,10 @@ public:
 		barrier();
 
 		{
-			std::lock_guard<std::mutex> lg(locks[0].mut);
+			//std::lock_guard<std::mutex> lg(locks[0].mut);
+			locks.lock(0);
 			cmdQueuePtrTerminate[0]->push_back(CommandTerminate());
+			locks.unlock(0);
 		}
 
 
@@ -290,8 +318,15 @@ private:
 	const int numProducersM1;
 	struct MutexWithoutFalseSharing
 	{
+		char paddingEdge[64];
 		std::mutex mut;
 		char padding[64-sizeof(std::mutex) <= 0 ? 4:64-sizeof(std::mutex)];
+	};
+	struct BarrierWithoutFalseSharing
+	{
+		char paddingEdge[64];
+		bool bar;
+		char padding[64-sizeof(bool) <= 0 ? 4:64-sizeof(bool)];
 	};
 	struct CommandGet
 	{
@@ -333,9 +368,39 @@ private:
 		CommandTerminate():cmd(){ }
 	};
 
-	std::vector<MutexWithoutFalseSharing> locks;
-	NWaySetAssociativeMultiThreadCache<CacheKey,CacheValue> L2;
-	DirectMappedMultiThreadCache<CacheKey,CacheValue> L1;
+
+
+	class AtomicWithoutFalseSharing{
+	public:
+		char paddingEdge[64];
+		std::atomic<bool> flag;
+		char padding[64>sizeof(std::atomic<bool>) ? 64-sizeof(std::atomic<bool>):4];
+	};
+
+	class FastMutex {
+
+	    std::vector<AtomicWithoutFalseSharing> flag;
+
+	public:
+	    FastMutex(){}
+	    FastMutex(int n):flag(n){}
+	    void lock(int i)
+	    {
+	        while (flag[i].flag.exchange(true, std::memory_order_relaxed));
+	        std::atomic_thread_fence(std::memory_order_acquire);
+	    }
+
+	    void unlock(int i)
+	    {
+	        std::atomic_thread_fence(std::memory_order_release);
+	        flag[i].flag.store(false, std::memory_order_relaxed);
+	    }
+	};
+
+	//std::vector<MutexWithoutFalseSharing> locks;
+	FastMutex locks;
+	LruClockCache<CacheKey,CacheValue> L2;
+	DirectMappedType L1;
 
 	std::vector<std::unique_ptr<std::vector<CommandGet>>> cmdQueueGet;
 	std::vector<std::unique_ptr<std::vector<CommandGet>>> cmdQueueForConsumerGet;
@@ -358,7 +423,7 @@ private:
 	std::vector<std::vector<CommandTerminate> *> cmdQueueForConsumerPtrTerminate;
 
 	std::thread consumer;
-	std::vector<bool> barriers;
+	std::vector<BarrierWithoutFalseSharing> barriers;
 	//std::condition_variable signal;
 };
 
