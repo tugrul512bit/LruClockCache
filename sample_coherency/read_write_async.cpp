@@ -5,7 +5,7 @@ int main()
 {
  		const int N=400000;
 		std::vector<int> data(N);
-		AsyncCache<int,int> cache(1024*1024*4,1024,1024*8,[&](int key){ return data[key]; },[&](int key, int value){ data[key]=value; });
+		AsyncCache<int,int> cache(1024*1024*4,1024*1024*8,[&](int key){ return data[key]; },[&](int key, int value){ data[key]=value; });
 		int d=0;
 		std::cin>>d;
 		std::cout<<"test1"<<std::endl;
