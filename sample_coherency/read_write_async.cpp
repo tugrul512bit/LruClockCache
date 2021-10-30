@@ -4,7 +4,11 @@
 int main()
 {
  		const int N=400000;
+	
+		// backing-store simulation
 		std::vector<int> data(N);
+	
+		// 1 consumer, 8 producers
 		AsyncCache<int,int> cache(
 			1024*1024*4, // tags of direct mapped cache
 			1024*1024*8, // tags of LRU (approximation)
