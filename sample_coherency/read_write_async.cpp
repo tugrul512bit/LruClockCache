@@ -30,8 +30,7 @@ int main()
 		
 		*/
 	
-		int d=0;
-		std::cin>>d;
+
 		std::cout<<"test1"<<std::endl;
 		for(int i=0;i<100;i++)
 		{
