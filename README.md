@@ -97,7 +97,7 @@ int main()
 }
 ```
 --------
-# Async Multi Level Cache (read+write weak-coherency(threads are responsible to use barrier) + multithread = up to 75 million lookups per second)
+# Async Multi Level Cache (read+write weak-coherency(threads are responsible to use barrier) + multithread = up to 180 million lookups per second)
 
 ```CPP
 int main()
@@ -105,9 +105,9 @@ int main()
 	std::vector<int> data(1000000); // backing-store simulation
 	
 	// L1 cache = direct mapped 128 elements
-	// L2 cache = n-way set associative 128*1024 elements
+	// L2 cache = fully associative 128*1024 elements
 	// similar cache-miss functions with MultiLevelCache
-	AsyncCache<int,int> cache(128,128,1024,[&](int key){ return data[key]; },[&](int key, int value){ data[key]=value; });
+	AsyncCache<int,int> cache(128,128*1024,[&](int key){ return data[key]; },[&](int key, int value){ data[key]=value; });
 	
 	int val;
 	
