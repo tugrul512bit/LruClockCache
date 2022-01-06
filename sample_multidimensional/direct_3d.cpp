@@ -4,6 +4,7 @@
 int main()
 {
 	int backingStore[10][10][10];
+	// ultra-fast 3D direct-mapped caching (but slower at 2D/1D patterns)
 	DirectMapped3DMultiThreadCache<int,int> cache(4,4,4,
 			[&](int x, int y, int z){ return backingStore[x][y][z]; },
 			[&](int x, int y, int z, int value){  backingStore[x][y][z]=value; });
