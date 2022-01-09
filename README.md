@@ -112,7 +112,7 @@ int main()
 	int val;
 	
 	// immediately returns, cache runs asynchronously to serve in a dedicated thread
-	int slot = cache.setAsync(5,100); 
+	int slot = cache.setAsync(5,100); // or int slot = omp_get_thread_num(); cache.setAsync(5,100,slot);
 	
 	// immediately returns, any slot id can be used but a thread should use its own unique slot id on all operations for maximum performance
 	cache.getAsync(5,&val,slot);	
