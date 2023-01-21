@@ -79,6 +79,10 @@ Timings (50 million pixel lookups per second = 20 nanosecond average per access)
 --------
 # Multi Level Cache (read+write coherency + multithreaded = 75 million lookups per second)
 
+[![Sharded Caching for simplicity](https://github.com/tugrul512bit/LruClockCache/blob/main/MultiLevelCache1.png)](https://github.com/tugrul512bit/LruClockCache/blob/main/MultiLevelCache1.png)
+
+
+
 ```CPP
 int main()
 {
