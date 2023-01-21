@@ -101,7 +101,7 @@ int main()
 --------
 # Async Multi Level Cache (read+write weak-coherency(threads are responsible to use barrier) + multithread = up to 180 million lookups per second)
 
-[![Asynchronous caching with a dedicated I/O thread](https://github.com/tugrul512bit/LruClockCache/blob/main/AsyncCacheDiagram.png)](https://github.com/tugrul512bit/LruClockCache/blob/main/AsyncCacheDiagram.png)
+[![Asynchronous caching with a dedicated I/O thread](https://github.com/tugrul512bit/LruClockCache/blob/main/AsyncCacheDiagram2.png)](https://github.com/tugrul512bit/LruClockCache/blob/main/AsyncCacheDiagram2.png)
 
 ```CPP
 int main()
