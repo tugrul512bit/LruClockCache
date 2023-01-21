@@ -141,6 +141,8 @@ int main()
 
 If keys are integer type (char, int, size_t), then a L1 direct-mapped cache can be added in front of an L2 LRU cache to act as a single-thread front of an LLC cache given by user (which implements thread-safe set/get operations). Currently it supports read-only multi-thread or read+write single thread:
 
+[![Read-only multi-threaded caching](https://github.com/tugrul512bit/LruClockCache/blob/main/CacheThreader1.png)](https://github.com/tugrul512bit/LruClockCache/blob/main/CacheThreader1.png)
+
 ```CPP
 // simulating a backing-store
 std::vector<int> backingStore(10000000);
