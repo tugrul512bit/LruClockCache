@@ -315,15 +315,15 @@ private:
 	const int numProducersM1;
 	struct MutexWithoutFalseSharing
 	{
-		char paddingEdge[64];
+		char paddingEdge[256];
 		std::mutex mut;
-		char padding[64-sizeof(std::mutex) <= 0 ? 4:64-sizeof(std::mutex)];
+		char padding[256-sizeof(std::mutex) <= 0 ? 4:256-sizeof(std::mutex)];
 	};
 	struct BarrierWithoutFalseSharing
 	{
-		char paddingEdge[64];
+		char paddingEdge[256];
 		bool bar;
-		char padding[64-sizeof(bool) <= 0 ? 4:64-sizeof(bool)];
+		char padding[256-sizeof(bool) <= 0 ? 4:256-sizeof(bool)];
 	};
 	struct CommandGet
 	{
@@ -369,9 +369,9 @@ private:
 
 	class AtomicWithoutFalseSharing{
 	public:
-		char paddingEdge[64];
+		char paddingEdge[256];
 		std::atomic<bool> flag;
-		char padding[64>sizeof(std::atomic<bool>) ? 64-sizeof(std::atomic<bool>):4];
+		char padding[256>sizeof(std::atomic<bool>) ? 256-sizeof(std::atomic<bool>):4];
 	};
 
 	class FastMutex {
