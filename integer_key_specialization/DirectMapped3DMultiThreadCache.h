@@ -44,7 +44,7 @@ public:
 	// numElementsZ: has to be integer-power of 2 (e.g. 2,4,8,16,...)
 	// prepareForMultithreading: by default (true) it allocates an array of structs each with its own mutex to evade false-sharing during getThreadSafe/setThreadSafe calls
 	//          with a given "false" value, it does not allocate mutex array and getThreadSafe/setThreadSafe methods become undefined behavior under multithreaded-use
-	//          true: allocates at least extra 64 bytes per cache tag
+	//          true: allocates at least extra 256 bytes per cache tag
 	DirectMapped3DMultiThreadCache(CacheKey numElementsX,CacheKey numElementsY,CacheKey numElementsZ,
 				const std::function<CacheValue(CacheKey,CacheKey,CacheKey)> & readMiss,
 				const std::function<void(CacheKey,CacheKey,CacheKey,CacheValue)> & writeMiss,
@@ -338,7 +338,7 @@ private:
 	struct MutexWithoutFalseSharing
 	{
 		std::mutex mut;
-		char padding[64-sizeof(std::mutex) <= 0 ? 4:64-sizeof(std::mutex)];
+		char padding[256-sizeof(std::mutex) <= 0 ? 4:256-sizeof(std::mutex)];
 	};
 	const CacheKey sizeX;
 	const CacheKey sizeY;
